@@ -1,0 +1,14 @@
+services:
+  jupyter-notebook:
+    image: jupyter/all-spark-notebook:x86_64-ubuntu-22.04
+    container_name: my-jupyter-lab
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./:/home/jovyan/work:Z
+      - /home/hp/Bigdata/Data:/data
+      - /home/hp/Bigdata/Code:/code
+    environment:
+      - JUPYTER_TOKEN=123456
+      - DOCKER_STACKS_JUPYTER_CMD=notebook

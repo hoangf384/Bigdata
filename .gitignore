@@ -1,0 +1,9 @@
+.idea/
+.venv/
+.vscode/
+Airflow/config/
+Airflow/logs/
+Airflow/docker-compose.yaml.save
+Code/spark-apps/scala/
+**/Data*/
+**/data*/

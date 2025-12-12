@@ -5,7 +5,7 @@
     
     - [storage architecture](#11-storage-architecture)
         
-        - [data lake structure](#111-data-lake-structure)
+        - [data lake structure](#111-data-lake-strucvture)
         
         - [data warehouse structure](#112-data-warehouse-structure)
         
@@ -28,6 +28,10 @@
     - [vector search engine](#25-vector-search-engine)
 
 3. [processing paradigm](#3-processing-paradigm)
+
+    - [batch transform](#31-batch-transform)
+    
+    - [batching transform](#32-streaming-transform)
 
 [MISC](#misc)
 
@@ -74,59 +78,82 @@ Phần này giống như introduction về mọi thứ khởi nguyên trong lưu
 | table format  | (iceberg/delta lake)  |
 | compute layer | (trino/spark)         |
 
-#### MISC
-##### table format
+
+### 1.4 ODS
+
+Sẽ viết sau
+
+### 1.5 vector DB
+
+Sẽ viết sau
+
+---
+### MISC
+#### table format
 
 - là tập hợp các quy tắc, định dạng để tổ chức và quản lý dữ liệu trong data lake 
 - cung cấp các tính năng như: schema enforcement, ACID transaction, versioning, time travel v.v... 
 - giúp biến data lake thành data lakehouse, hỗ trợ các công cụ compute layer như Spark, Trino, Presto v.v... để truy vấn và phân tích dữ liệu một cách hiệu quả hơn
  
-##### medallion architecture
+#### medallion architecture
 bronze level: sao chép dữ liệu lại từ data source, không transform, apply table format (iceberg, delta lake) \
 silver level: tương đương với transformating lavel, chỉ transform nhẹ, ràng buộc điều kiện \
 gold level: tầng cao nhất, feed được dữ liệu cho ML, BI tools v.v... 
 
-##### different type of loading methods
+#### different type of loading methods
 - batch processing
     - full load (lần đầu)
     - incremental load (những lần sau)
 - stream processing
     - micro-batch
     - real-time stream processing
-### 1.4 ODS
-
-### 1.5 vector DB
 
 ## 2. execution methods layer
 
 excution methods layer là lớp xử lý dữ liệu, trong đó có 2 engine lớn nhất là sql engine và NoSQL engine, dataframe engine cũng khá nổi, như là Pandas, Polars, Dask, tuy nhiên Pandas performace quá yếu để gọi là DF engine được, thay vào đó dùng spark tốt hơn nhiều.
 
 ### 2.1 SQL engine
-- trino/presto (trino là bản nâng cấp của presto)
-- spark
-- hive
-### 2.2 NoSQL engine
-- cassandra
-- mongodb
-- hbase
---- 
-tùy mục đích sẽ chọn các engine khác nhau để xử lý dữ liệu, ví dụ:
-1. Nhánh DW: trong trường hợp muốn xuất dữ liệu để phân tích (analytic serving layer) thì sẽ chọn sql engine (heavy transform operation, ETL), xuất ra semi-structured data / structured data
-2. Nhánh DLH: cùnng với SQL engine, nhưng kết hợp thêm table format, DL sẽ biến thành DLH
-3. Nhánh ODS: trong trường hợp muốn lưu trữ dữ liệu metadata thì sẽ sử dụng NoSQL engine (light transform operation)
-4. Nhánh vector DB: Nhánh này khá mới, nổi những năm gần đây, sử dụng LLM để trong execution engine, mình chưa tìm hiểu kỹ nên chỉ viết ngang đây thôi
 
-> hiểu đơn giản là: storage layer + execution layer(light/heavy transform) + MISC = data platform
+- trino/presto (trino là bản nâng cấp của presto)
+- Spark
+- Hive
+
+### 2.2 NoSQL engine
+
+- Cassandra
+- mongoDB
+- hbase
+
 ### 2.3 Dataframe engine
+
+- Polars
+- Pyspark.dataframe
+- Dask
 
 ### 2.4 Emmbedding engine
 
 ### 2.5 Vector search engine
 
-## 3. processing paradigm
-- batch transform processing
-- stream transform processing
+--- 
+tùy mục đích sẽ chọn các engine khác nhau để xử lý dữ liệu, ví dụ:
 
+1. Nhánh DW: trong trường hợp muốn xuất dữ liệu để phân tích (analytic serving layer) thì sẽ chọn sql engine (heavy transform operation, ETL), xuất ra semi-structured data / structured data
+2. Nhánh DLH: cùnng với SQL engine, nhưng kết hợp thêm table format, DL sẽ biến thành DLH
+3. Nhánh ODS: trong trường hợp muốn lưu trữ dữ liệu metadata thì sẽ sử dụng NoSQL engine (light transform operation)
+4. Nhánh vector DB: Nhánh này khá mới, nổi những năm gần đây, sử dụng LLM để trong execution engine, mình chưa tìm hiểu kỹ nên chỉ viết ngang đây thôi
+
+> hiểu đơn giản là: storage layer + execution layer (light/heavy transform) + MISC = data platform
+## 3. processing paradigm
+
+Hai cơ chế chính trong flow dữ liệu là batch và streaming processing
+
+### 3.1 batch transform 
+
+Sẽ viết sau
+
+### 3.2 Stream transform
+
+Sẽ viết sau
 
 ## MISC
 > duckDB hiểu đơn giản là execution engine (SQL engine), query trực tiếp flat file (csv, parquet, json...) mà k cần load vào dbms (DuckDB = execution engine(SQL) + embeddingDB (sqllite-like)) \

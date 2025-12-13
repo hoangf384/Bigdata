@@ -8,7 +8,7 @@ spark = (
     SparkSession.builder
     .appName("ETL-30Days-v2")
     .master("spark://spark-master:7077")
-    .config("spark.driver.memory", "8g")
+    .config("spark.driver.memory", "4g")
     .config("spark.sql.files.maxPartitionBytes", 256 * 1024 * 1024)
     .config("spark.sql.shuffle.partitions", "200")
     .getOrCreate()
@@ -49,7 +49,7 @@ def main():
         date_str = extract_date_from_filename(file)
 
         # 1 day ETL
-        df = etl.read_data(file)
+        df = etl.read_data(spark, file)
         df = etl.select_fields(df)
         df = etl.transform_category(df)
         df = df.filter(df.Type != "Error")

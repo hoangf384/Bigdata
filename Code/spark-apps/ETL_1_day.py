@@ -3,18 +3,18 @@ from pyspark.sql import functions as F
 from pyspark.sql.functions import when, col
 
 # -------------------------
-# Spark session
+# Spark session (uncomment nếu chạy đơn, comment nếu chạy như module)
 # -------------------------
-spark = (
-    SparkSession.builder
-    .appName("ETL-1day")
-    .master("spark://spark-master:7077")
-    .config("spark.driver.memory", "8g")
-    .config("spark.sql.files.maxPartitionBytes", 256 * 1024 * 1024)  # 256MB
-    .config("spark.sql.shuffcle.partitions", "200") # 200 partitions for shuffle
-    .getOrCreate()
-)
-spark.sparkContext.setLogLevel("ERROR")
+# spark = (
+#     SparkSession.builder
+#     .appName("ETL-1-day")
+#     .master("spark://spark-master:7077")
+#     .config("spark.driver.memory", "8g")
+#     .config("spark.sql.files.maxPartitionBytes", 256 * 1024 * 1024)  # 256MB
+#     .config("spark.sql.shuffcle.partitions", "200") # 200 partitions for shuffle
+#     .getOrCreate()
+# )
+# spark.sparkContext.setLogLevel("ERROR")
 
 # -------------------------
 # Paths (update as needed)
@@ -25,7 +25,8 @@ save_path = "/data/destination/log_content/20220401/"
 # -------------------------
 # Helpers: IO
 # -------------------------
-def read_data(path):
+
+def read_data(spark, path):
     """
     Đọc JSON từ path (có thể là file hoặc folder)
     """

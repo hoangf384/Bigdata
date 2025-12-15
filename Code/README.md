@@ -61,7 +61,7 @@ Mở trình duyệt và truy cập vào địa chỉ: [localhost:8080](http://lo
 ### mount thêm jars
 trước tiên thì phải thêm jars từ bên ngoài đã, trong file compose của mình có mục `- /home/hp/Bigdata/Spark/jars:/opt/spark/jars_external` đây là mục mình mount thêm thư viện jdbc cho spark kết nối, mình thử nhiều cách rồi nhưng mà k có cách nào tốt hết, chỉ có cách là thêm đường dẫn để bash tự đọc được, sau đây là cách mình mount nhé:
 ```bash
-
+chạy bash như lệnh trên
 ``` 
 
 ```bash

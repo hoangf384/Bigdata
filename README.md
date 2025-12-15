@@ -29,23 +29,24 @@
 | Infrastructure / DevOps   |   :   | Docker, Docker Compose, Linux (Fedora)        |
 | Source Control            |   :   | Git, GitHub                                   |
 | IDEs                      |   :   | VS Code, DataGrip                             |
+| Other tools | : | lazydocker |
 
 ## Luồng dữ liệu di chuyển (data lineage flow)
 
 ### giai đoạn 0: thu thập dữ liệu (data ingestion)
-> dữ liệu di chuyển từ nguồn (API, file csv, file json...) -> lưu vào ./Data/raw
+Dữ liệu di chuyển từ nguồn (API, file csv, file json...) -> lưu vào ./Data/raw
 
-### giai đoạn 1: kiểm thử dữ liệu (data testing)
-> dữ liệu di chuyển từ ./Data/raw -> đọc bằng jupyter-notebook -> xử lý dữ liệu và chạy thử kết quả thành công như mong đợi thì refactor lại, đóng gói thành file .py
+### giai đoạn 1: khai phá dữ liệu (data mining)
+
+Dữ liệu sẽ được đọc từ nguồn (Data Source), được khai phá bằng `jupyter-all-spark`, viết thử light / heavy transform, refactor code rồi đóng gói lại thành các hàm để sử dụng trong file .py
 
 ### giai đoạn 2: xử lý dữ liệu (data processing)
-> dữ liệu di chuyển từ ./Data/raw -> xử lý bằng spark (sử dụng spark-submit) -> lưu kết quả vào ./Data/destination \
-> hầu như đến bước này mình đã kết thúc luồng, vì dữ liệu chỉ là file log, k có nguồn đầu vào đầu ra rõ ràng, và hiện tại mình chỉ mới học đến đây. Mình sẽ cập nhật sau
 
-
-
+Vẫn giống như trên, tuy nhiên viết chỉnh chu hơn, đóng gói thành các hàm, viết docstring, chia thành các section. dùng `spark-submit` và đánh giá performance, hiệu năng xử lý 36M dòng => 1.2M dòng => bắn vào database (Mysql) thông qua JDBC.
 
 ### giai đoạn 3: 
+
+Kiểm tra dữ liệu trên database bằng datagrips
 
 ## Overview
 

@@ -6,9 +6,9 @@ from pyspark.sql.functions import lit, when, col
 from pyspark.sql.window import Window
 
 
-# ------------------------
+# --------------------------
 # Spark session
-# ------------------------
+# --------------------------
 
 spark = (
     SparkSession.builder
@@ -26,8 +26,8 @@ MYSQL_CONFIG = {
     "port": "3306",
     "database": "etl_data",
     "table": "customer_content_stats",
-    "user": "root",
-    "password": "",
+    "user": "user",
+    "password": "password",
     "driver": "com.mysql.cj.jdbc.Driver"
 }
 
@@ -90,7 +90,7 @@ def save_data(result, path):
     print(f"Data saved to {path}")
 
 
-def import_to_mysql(df, config):
+def import_to_mysql(df, config= MYSQL_CONFIG):
     """
     Ghi Spark DataFrame vào MySQL bằng JDBC.
 
@@ -224,9 +224,52 @@ def pivot_table(df):
     )
     return pivoted
 
+# -------------------------
+# post-transformating (pivot table)
+# -------------------------
 
 def most_watch(df):
-    # define most_watch
+    """
+    Xác định loại nội dung được xem nhiều nhất (MostWatch) cho mỗi khách hàng
+    dựa trên tổng mức độ sử dụng của từng nhóm nội dung.
+
+    Hàm này so sánh các cột tổng hợp theo loại nội dung và gán nhãn
+    tương ứng với loại có giá trị lớn nhất. Kết quả phản ánh hành vi
+    tiêu thụ nội dung nổi trội của khách hàng trong toàn bộ khoảng thời gian
+    đã được tổng hợp (ví dụ: 30 ngày).
+
+    Parameters
+    ----------
+    df : pyspark.sql.DataFrame
+        DataFrame đầu vào ở mức customer (1 dòng / 1 Contract),
+        bắt buộc phải có các cột:
+        - Giai Tri
+        - Phim Truyen
+        - The Thao
+        - Thieu Nhi
+        - Truyen Hinh
+
+        Các cột trên thường là tổng thời lượng hoặc tổng số lần sử dụng
+        nội dung đã được aggregate trước đó.
+
+    Returns
+    -------
+    pyspark.sql.DataFrame
+        DataFrame đầu ra với cột mới:
+        - MostWatch : tên loại nội dung có mức sử dụng cao nhất
+          đối với mỗi Contract.
+
+    Notes
+    -----
+    - Hàm sử dụng `greatest()` để xác định giá trị lớn nhất trong các
+      cột nội dung.
+    - Trong trường hợp nhiều loại nội dung có cùng giá trị lớn nhất,
+      kết quả `MostWatch` sẽ phụ thuộc vào thứ tự các điều kiện `when`
+      và có thể không hoàn toàn deterministic.
+    - Hàm này được thiết kế để sử dụng sau bước tổng hợp dữ liệu
+      (ví dụ: sau `groupBy("Contract")`) và không nên áp dụng trực tiếp
+      lên dữ liệu raw hoặc daily-level.
+    """
     df= df.withColumn("MostWatch", 
                      F.greatest(col("Giai Tri"), col("Phim Truyen"), col("The Thao"), col("Thieu Nhi"), col("Truyen Hinh"))
                      )
@@ -241,7 +284,47 @@ def most_watch(df):
 
 
 def customer_taste(df):
-    # define customer_taste
+    """
+    Xác định tập hợp các loại nội dung mà khách hàng đã sử dụng
+    trong toàn bộ khoảng thời gian tổng hợp (ví dụ: 30 ngày).
+
+    Hàm này tạo cột `Taste` bằng cách kết hợp tên các loại nội dung
+    có giá trị sử dụng khác 0, phản ánh sở thích nội dung của khách hàng
+    theo nghĩa đã từng sử dụng, không xét mức độ nhiều hay ít.
+
+    Parameters
+    ----------
+    df : pyspark.sql.DataFrame
+        DataFrame đầu vào ở mức customer (1 dòng / 1 Contract),
+        bắt buộc phải có các cột tổng hợp theo loại nội dung:
+        - Giai Tri
+        - Phim Truyen
+        - The Thao
+        - Thieu Nhi
+        - Truyen Hinh
+
+        Các cột này thường là tổng thời lượng hoặc tổng số lần sử dụng
+        nội dung trong một khoảng thời gian xác định.
+
+    Returns
+    -------
+    pyspark.sql.DataFrame
+        DataFrame đầu ra với cột mới:
+        - Taste : chuỗi biểu diễn danh sách các loại nội dung mà
+          khách hàng đã sử dụng, được nối bằng dấu '-'
+          (ví dụ: 'Giai Tri-Phim Truyen-The Thao').
+
+    Notes
+    -----
+    - Chỉ các loại nội dung có giá trị khác 0 mới được đưa vào `Taste`.
+    - Thứ tự các loại nội dung trong chuỗi `Taste` là cố định và
+      phụ thuộc vào thứ tự khai báo trong hàm, không phản ánh mức độ ưu tiên
+      hay tần suất sử dụng.
+    - Hàm này không phân biệt mức độ sử dụng nhiều hay ít, mà chỉ phản ánh
+      việc khách hàng có sử dụng loại nội dung đó hay không.
+    - Được thiết kế để sử dụng sau bước tổng hợp dữ liệu ở mức customer
+      và không nên áp dụng trực tiếp lên dữ liệu raw hoặc daily-level.
+    """
     df=df.withColumn("Taste", 
                      F.concat_ws("-",
                                  when(col("Giai Tri") != 0, lit("Giai Tri")),
@@ -255,24 +338,68 @@ def customer_taste(df):
 
 
 def find_active(df):
-    windowspec = Window.partitionBy("Contract")
-    df = df.withColumn("Active",F.count("Date").over(windowspec))
-    df = df.drop("Date")
-    df = df.withColumn("Active",when(col("Active") > 4,"High").otherwise("Low"))
-    df = df.groupBy("Contract").agg(
-    F.sum("Giai Tri").alias("Total_Giai_Tri"),
-    F.sum("Phim Truyen").alias("Total_Phim_Truyen"),
-    F.sum("The Thao").alias("Total_The_Thao"),
-    F.sum("Thieu Nhi").alias("Total_Thieu_Nhi"),
-    F.sum("Truyen Hinh").alias("Total_Truyen_Hinh"),
-    F.first("MostWacth").alias("MostWacth"),
-    F.first("Taste").alias("Taste"),
-    F.first("Active").alias("Active")
-)
+    """
+    Tính toán mức độ hoạt động (Active) của khách hàng trong cửa sổ thời gian
+    nhiều ngày và tổng hợp dữ liệu ở mức customer (Contract).
+
+    Hàm này thực hiện các bước:
+    1. Với mỗi `Contract`, đếm số ngày DISTINCT (`Date`) mà contract xuất hiện
+       trong toàn bộ tập dữ liệu, không phụ thuộc số thiết bị hay số dòng log
+       trong cùng một ngày.
+    2. Tổng hợp (aggregate) các chỉ số sử dụng nội dung theo từng `Contract`
+       bằng cách cộng dồn giá trị trong nhiều ngày.
+    3. Gán giá trị `Active` (số ngày hoạt động) cho mỗi `Contract`.
+
+    Parameters
+    ----------
+    df : pyspark.sql.DataFrame
+        DataFrame đầu vào ở grain theo ngày (daily-level), trong đó:
+        - Mỗi `Contract` có thể xuất hiện nhiều dòng trong một ngày.
+        - Bắt buộc phải có các cột:
+            * Contract : mã khách hàng
+            * Date : ngày phát sinh log (kiểu date hoặc tương đương)
+            * Giai Tri, Phim Truyen, The Thao, Thieu Nhi, Truyen Hinh :
+              các chỉ số sử dụng nội dung theo ngày
+
+    Returns
+    -------
+    pyspark.sql.DataFrame
+        DataFrame đã được tổng hợp ở mức customer (1 dòng / 1 Contract),
+        bao gồm:
+        - Tổng thời lượng sử dụng 30 ngày cho từng loại nội dung
+        - Cột `Active` biểu thị số ngày DISTINCT mà contract hoạt động
+          trong toàn bộ khoảng thời gian
+
+    Notes
+    -----
+    - Số ngày hoạt động (`Active`) được tính bằng `countDistinct(Date)`
+      để đảm bảo không bị ảnh hưởng bởi việc một contract có nhiều thiết bị
+      hoặc nhiều dòng log trong cùng một ngày.
+    - Sau khi gọi hàm này, DataFrame kết quả không còn cột `Date` và
+      không còn ở grain theo ngày, mà chuyển sang grain theo customer.
+    - Hàm này thường được sử dụng để xây dựng bảng customer 30-day summary
+      (serving layer / mart) cho mục đích phân tích và báo cáo.
+    """
+    w = Window.partitionBy("Contract")
+    df = df.withColumn("Active", F.countDistinct("Date").over(w))
+    df = (
+        df.groupBy("Contract")
+        .agg(
+            F.sum("Giai Tri").alias("Giai Tri"),
+            F.sum("Phim Truyen").alias("Phim Truyen"),
+            F.sum("The Thao").alias("The Thao"),
+            F.sum("Thieu Nhi").alias("Thieu Nhi"),
+            F.sum("Truyen Hinh").alias("Truyen Hinh"),
+            F.max("Active").alias("Active")
+        )
+    )
     return df
 
+# -------------------------
 # Quản lý flow 1-30 days
 # List files
+# -------------------------
+
 def list_files_sorted(path):
     """
     Liệt kê và sắp xếp các file JSON trong một thư mục.
@@ -295,9 +422,9 @@ def list_files_sorted(path):
     ]
     return sorted(files)
 
-#-------------------
+# -------------------------
 # MISC
-#-------------------
+# -------------------------
 
 def extract_date_from_filename(path):
     """
@@ -318,8 +445,10 @@ def extract_date_from_filename(path):
     date_str = base.split(".")[0]   # 20220401
     return datetime.strptime(date_str, "%Y%m%d").date()
 
-# ------
 
+# -------------------------
+# Control flow
+# -------------------------
 
 def main():
     all_files = list_files_sorted(folder_path)
@@ -346,18 +475,21 @@ def main():
         df = pivot_table(df)
         # add date column
         df = df.withColumn("Date", F.lit(date_str))
-        # them most watch, customer taste
-        df = most_watch(df)
-        df = customer_taste(df)
 
         # union all days
         if final_df is None:
             final_df = df
         else:
             final_df = final_df.unionByName(df)
+        
+    final_df = find_active(final_df)
+    final_df = most_watch(final_df)
+    final_df = customer_taste(final_df)
 
     print("Saving final output...")
-    save_data(final_df, save_path)
+    # save_data(final_df, save_path)
+    
+    import_to_mysql(final_df)
 
     print("---- ETL 30 DAYS COMPLETED ----")
 

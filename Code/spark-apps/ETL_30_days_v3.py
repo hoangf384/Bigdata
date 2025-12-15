@@ -12,7 +12,7 @@ from pyspark.sql.window import Window
 
 spark = (
     SparkSession.builder
-    .appName("ETL-30Days-v2")
+    .appName("ETL-30Days-v3")
     .master("spark://spark-master:7077")
     .config("spark.driver.memory", "4g")
     .config("spark.sql.files.maxPartitionBytes", 256 * 1024 * 1024)
@@ -22,9 +22,9 @@ spark = (
 spark.sparkContext.setLogLevel("ERROR")
 
 MYSQL_CONFIG = {
-    "host": "localhost",
+    "host": "mysql",
     "port": "3306",
-    "database": "etl_data",
+    "database": "mydb",
     "table": "customer_content_stats",
     "user": "user",
     "password": "password",
@@ -118,6 +118,7 @@ def import_to_mysql(df, config= MYSQL_CONFIG):
         .option("dbtable", config["table"])
         .option("user", config["user"])
         .option("password", config["password"])
+        .option("batchsize", 10000)
         .mode("append")
         .save()
     )
@@ -222,7 +223,16 @@ def pivot_table(df):
                .sum("TotalDuration")
                .na.fill(0)
     )
-    return pivoted
+    final = (
+        pivoted.groupBy("Contract").agg(
+            F.sum("Truyen Hinh").alias("Truyen Hinh"),
+            F.sum("Giai Tri").alias("Giai Tri"),
+            F.sum("Thieu Nhi").alias("Thieu Nhi"),
+            F.sum("The Thao").alias("The Thao"),
+            F.sum("Phim Truyen").alias("Phim Truyen"),
+        )
+    )
+    return final
 
 # -------------------------
 # post-transformating (pivot table)
@@ -381,7 +391,7 @@ def find_active(df):
       (serving layer / mart) cho mục đích phân tích và báo cáo.
     """
     w = Window.partitionBy("Contract")
-    df = df.withColumn("Active", F.countDistinct("Date").over(w))
+    df = df.withColumn("Active", F.count("Date").over(w))
     df = (
         df.groupBy("Contract")
         .agg(
@@ -451,6 +461,14 @@ def extract_date_from_filename(path):
 # -------------------------
 
 def main():
+    """
+
+    control by loop function:
+        (raw file -> read (by read.json) -> select source -> light transform -> union) 
+    
+    pivot, add some metric (heavy transform) -> push into mysql db
+    
+    """
     all_files = list_files_sorted(folder_path)
     print("Files to process:", all_files)
 

@@ -12,10 +12,13 @@ services:
       - SPARK_EVENTLOG_ENABLED=true
       - SPARK_EVENTLOG_DIR=/opt/spark/logs
       - SPARK_MASTER_WEBUI_PORT=8080
+      - SPARK_DRIVER_EXTRA_CLASSPATH=/opt/spark/jars_external/*
+      - SPARK_EXECUTOR_EXTRA_CLASSPATH=/opt/spark/jars_external/*
     volumes:
       - ./logs:/opt/spark/logs
       - /home/hp/Bigdata/Data:/data
       - /home/hp/Bigdata/Code:/code
+      - /home/hp/Bigdata/Spark/jars:/opt/spark/jars_external
     networks:
       - spark-net
 
@@ -33,10 +36,13 @@ services:
         spark://spark-master:7077
     environment:
       - SPARK_WORKER_WEBUI_PORT=8081
+      - SPARK_DRIVER_EXTRA_CLASSPATH=/opt/spark/jars_external/*
+      - SPARK_EXECUTOR_EXTRA_CLASSPATH=/opt/spark/jars_external/*
     volumes:
       - ./logs:/opt/spark/logs
       - /home/hp/Bigdata/Data:/data
       - /home/hp/Bigdata/Code:/code
+      - /home/hp/Bigdata/Spark/jars:/opt/spark/jars_external
     networks:
       - spark-net
 
@@ -54,12 +60,16 @@ services:
         spark://spark-master:7077
     environment:
       - SPARK_WORKER_WEBUI_PORT=8081
+      - SPARK_DRIVER_EXTRA_CLASSPATH=/opt/spark/jars_external/*
+      - SPARK_EXECUTOR_EXTRA_CLASSPATH=/opt/spark/jars_external/*
     volumes:
       - ./logs:/opt/spark/logs
       - /home/hp/Bigdata/Data:/data
       - /home/hp/Bigdata/Code:/code
+      - /home/hp/Bigdata/Spark/jars:/opt/spark/jars_external
     networks:
       - spark-net
 
 networks:
   spark-net:
+    external: true

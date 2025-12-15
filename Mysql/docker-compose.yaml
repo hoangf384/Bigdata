@@ -33,11 +33,11 @@ services:
       retries: 5
 
     networks:
-      - bigdata
+      - spark-net
 
 networks:
-  bigdata:
-    driver: bridge
+  spark-net:
+   external: true
 
 volumes:
   db-volume:

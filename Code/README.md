@@ -38,7 +38,7 @@ Thông thường chạy bằng terminal sẽ tiện hơn.
 
 ---
 
-### Bước 1: Truy cập vào container spark-master
+### Bước 1: Truy cập vào bash spark-master
 
 ```bash
 docker exec -it spark-master /bin/bash
@@ -46,6 +46,7 @@ docker exec -it spark-master /bin/bash
 
 
 ### Bước 2: Chạy Spark app bằng spark-submit
+
 ```bash
 /opt/spark/bin/spark-submit \
   --master spark://spark-master:7077 \
@@ -55,5 +56,19 @@ docker exec -it spark-master /bin/bash
 
 
 ### Bước 3: Monitoring
-Mở trình duyệt và truy cập vào địa chỉ: [localhost:8080](http://localhost:18080) để theo dõi trạng thái của cụm Spark và các ứng dụng đang chạy.
-> Mình đổi port từ 8080 > 18080 để tránh xung đột với jupyter-notebook của mình, bạn tự đổi lại nha.
+Mở trình duyệt và truy cập vào địa chỉ: [localhost:8080](http://localhost:18080) để theo dõi trạng thái của cụm Spark và các ứng dụng đang chạy. Mình đổi port từ 8080 > 18080 để tránh xung đột với jupyter-notebook của mình, bạn tự đổi lại nha.
+
+### mount thêm jars
+trước tiên thì phải thêm jars từ bên ngoài đã, trong file compose của mình có mục `- /home/hp/Bigdata/Spark/jars:/opt/spark/jars_external` đây là mục mình mount thêm thư viện jdbc cho spark kết nối, mình thử nhiều cách rồi nhưng mà k có cách nào tốt hết, chỉ có cách là thêm đường dẫn để bash tự đọc được, sau đây là cách mình mount nhé:
+```bash
+
+``` 
+
+```bash
+/opt/spark/bin/spark-submit \
+  --master spark://spark-master:7077 \
+  --deploy-mode client \
+  --jars /opt/spark/jars_external/mysql-connector-j-8.4.0.jar \
+  /code/spark-apps/ETL_30_days_v3.py
+```
+

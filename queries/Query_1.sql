@@ -1,1 +1,1 @@
-select '' from Socom as as
+select * from customer_content_stats

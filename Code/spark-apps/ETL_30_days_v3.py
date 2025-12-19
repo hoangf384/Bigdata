@@ -81,7 +81,7 @@ def save_data(result, path):
     """
     (
         result
-        .repartition(1)
+        .repartition(5)
         .write
         .mode("overwrite")
         .option("header", "true")
@@ -169,12 +169,12 @@ def transform_category(df):
     """
     return df.withColumn(
         "Type",
-        when(col("AppName").isin("CHANNEL", "DSHD", "KPLUS", "KPlus"), "Truyen Hinh")
-        .when(col("AppName").isin("VOD", "FIMS_RES", "BHD_RES", "VOD_RES", "FIMS", "BHD", "DANET"), "Phim Truyen")
-        .when(col("AppName") == "RELAX", "Giai Tri")
-        .when(col("AppName") == "CHILD", "Thieu Nhi")
-        .when(col("AppName") == "SPORT", "The Thao")
-        .otherwise("Error")
+        when(col("AppName").isin("CHANNEL", "DSHD", "KPLUS", "KPlus"), "Truyen Hinh").\
+        when(col("AppName").isin("VOD", "FIMS_RES", "BHD_RES", "VOD_RES", "FIMS", "BHD", "DANET"), "Phim Truyen").\
+        when(col("AppName") == "RELAX", "Giai Tri").\
+        when(col("AppName") == "CHILD", "Thieu Nhi").\
+        when(col("AppName") == "SPORT", "The Thao").\
+        otherwise("Error")
     )
 
 
@@ -223,20 +223,13 @@ def pivot_table(df):
                .sum("TotalDuration")
                .na.fill(0)
     )
-    final = (
-        pivoted.groupBy("Contract").agg(
-            F.sum("Truyen Hinh").alias("Truyen Hinh"),
-            F.sum("Giai Tri").alias("Giai Tri"),
-            F.sum("Thieu Nhi").alias("Thieu Nhi"),
-            F.sum("The Thao").alias("The Thao"),
-            F.sum("Phim Truyen").alias("Phim Truyen"),
-        )
-    )
-    return final
+    return pivoted
+
 
 # -------------------------
 # post-transformating (pivot table)
 # -------------------------
+
 
 def most_watch(df):
     """
@@ -280,6 +273,7 @@ def most_watch(df):
       (ví dụ: sau `groupBy("Contract")`) và không nên áp dụng trực tiếp
       lên dữ liệu raw hoặc daily-level.
     """
+
     df= df.withColumn("MostWatch", 
                      F.greatest(col("Giai Tri"), col("Phim Truyen"), col("The Thao"), col("Thieu Nhi"), col("Truyen Hinh"))
                      )
@@ -405,10 +399,12 @@ def find_active(df):
     )
     return df
 
+
 # -------------------------
 # Quản lý flow 1-30 days
 # List files
 # -------------------------
+
 
 def list_files_sorted(path):
     """
@@ -425,6 +421,7 @@ def list_files_sorted(path):
         Danh sách đường dẫn đầy đủ tới các file JSON,
         được sắp xếp theo thứ tự tăng dần.
     """
+
     files = [
         os.path.join(path, f)
         for f in os.listdir(path)
@@ -432,9 +429,11 @@ def list_files_sorted(path):
     ]
     return sorted(files)
 
+
 # -------------------------
 # MISC
 # -------------------------
+
 
 def extract_date_from_filename(path):
     """
@@ -460,15 +459,53 @@ def extract_date_from_filename(path):
 # Control flow
 # -------------------------
 
-def main():
+def control_flow():
+    """
+    Điều phối toàn bộ luồng ETL dữ liệu log theo ngày và tổng hợp kết quả
+    cho cửa sổ thời gian nhiều ngày.
+
+    Hàm đọc lần lượt các file dữ liệu theo ngày, thực hiện các bước làm sạch
+    và biến đổi nhẹ (light transform) ở mức daily, sau đó pivot dữ liệu
+    về dạng customer-level theo ngày và union tất cả các ngày lại.
+    Sau khi hoàn tất vòng lặp, dữ liệu được tổng hợp (heavy transform)
+    ở mức customer cho toàn bộ khoảng thời gian và ghi ra storage.
+
+    Quy trình xử lý chi tiết:
+    1. Lấy danh sách các file dữ liệu theo ngày và sắp xếp theo thời gian.
+    2. Với mỗi file:
+        - Đọc dữ liệu JSON daily.
+        - Làm phẳng dữ liệu (select `_source.*` nếu tồn tại).
+        - Ánh xạ AppName sang nhóm nội dung (Type).
+        - Lọc bỏ các bản ghi không hợp lệ (Contract NULL, Contract = '0',
+          Type = 'Error').
+        - Tổng hợp và pivot dữ liệu về dạng:
+          1 dòng / 1 Contract / 1 ngày.
+        - Thêm cột `Date` để giữ thông tin ngày phát sinh dữ liệu.
+        - Union dữ liệu daily vào DataFrame tổng (`final_df`).
+    3. Sau khi xử lý toàn bộ file:
+        - Tổng hợp dữ liệu nhiều ngày để tính số ngày hoạt động (`Active`)
+          cho mỗi Contract.
+        - Xác định loại nội dung được xem nhiều nhất (`MostWatch`).
+        - Xác định tập hợp sở thích nội dung (`Taste`).
+    4. Ghi kết quả cuối cùng ra storage (CSV).
+
+    Returns
+    -------
+    None
+        Hàm không trả về giá trị, chỉ thực hiện ETL và ghi dữ liệu đầu ra.
+
+    Notes
+    -----
+    - Hàm giả định danh sách file đầu vào đã được sắp xếp theo thứ tự
+      thời gian tăng dần.
+    - Sau bước pivot ở mức daily, DataFrame có grain:
+        1 dòng / (Contract, Date).
+    - Sau các bước tổng hợp cuối cùng, DataFrame có grain:
+        1 dòng / Contract.
+    - Hàm này phù hợp để xây dựng bảng customer summary cho phân tích,
+      báo cáo BI hoặc serving layer trong data warehouse.
     """
 
-    control by loop function:
-        (raw file -> read (by read.json) -> select source -> light transform -> union) 
-    
-    pivot, add some metric (heavy transform) -> push into mysql db
-    
-    """
     all_files = list_files_sorted(folder_path)
     print("Files to process:", all_files)
 
@@ -491,6 +528,7 @@ def main():
         
         # summarize, pivot
         df = pivot_table(df)
+        
         # add date column
         df = df.withColumn("Date", F.lit(date_str))
 
@@ -511,5 +549,6 @@ def main():
 
     print("---- ETL 30 DAYS COMPLETED ----")
 
+
 if __name__ == "__main__":
-    main()
+    control_flow()

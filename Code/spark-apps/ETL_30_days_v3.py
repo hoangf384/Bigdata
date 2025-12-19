@@ -505,9 +505,9 @@ def main():
     final_df = customer_taste(final_df)
 
     print("Saving final output...")
-    # save_data(final_df, save_path)
+    save_data(final_df, save_path)
     
-    import_to_mysql(final_df)
+    # import_to_mysql(final_df)
 
     print("---- ETL 30 DAYS COMPLETED ----")
 

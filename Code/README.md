@@ -71,4 +71,8 @@ chạy bash như lệnh trên
   --jars /opt/spark/jars_external/mysql-connector-j-8.4.0.jar \
   /code/spark-apps/ETL_30_days_v3.py
 ```
-
+### DuckDB
+gọi ui lên truy vấn
+```bash
+cd ~/Bigdata/Data && duckdb ~/Bigdata/DuckDB/db/mydatabase.duckdb -ui
+```

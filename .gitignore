@@ -7,3 +7,7 @@ Airflow/docker-compose.yaml.save
 Code/spark-apps/scala/
 **/Data*/
 **/data*/
+
+.gitignore
+
+DuckDB/

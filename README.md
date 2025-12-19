@@ -29,7 +29,7 @@
 | Infrastructure / DevOps   |   :   | Docker, Docker Compose, Linux (Fedora)        |
 | Source Control            |   :   | Git, GitHub                                   |
 | IDEs                      |   :   | VS Code, DataGrip                             |
-| Other tools | : | lazydocker |
+| Other tools | : | lazydocker, htop, DuckDB |
 
 ## Luồng dữ liệu di chuyển (data lineage flow)
 
@@ -46,7 +46,9 @@ Vẫn giống như trên, tuy nhiên viết chỉnh chu hơn, đóng gói thành
 
 ### giai đoạn 3: 
 
-Kiểm tra dữ liệu trên database bằng datagrips
+Kiểm tra dữ liệu trên database bằng datagrips (Done) \
+nghịch thử DuckDB (Done) \
+
 
 ## Overview
 

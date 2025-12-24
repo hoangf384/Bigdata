@@ -7,6 +7,7 @@
 
 ## Mục lục
 1. [Tổng quan](#tổng-quan)
+1. [Tổng quan](#tổng-quan)
 2. [Kiến trúc](#kiến-trúc)
 3. [Công cụ](#công-cụ)
 4. [Luồng dữ liệu di chuyển (data linege flow)](#uồng-dữ-liệu-di-chuyển-data-linege-flow)
@@ -29,7 +30,7 @@
 | Infrastructure / DevOps   |   :   | Docker, Docker Compose, Linux (Fedora)        |
 | Source Control            |   :   | Git, GitHub                                   |
 | IDEs                      |   :   | VS Code, DataGrip                             |
-| Other tools | : | lazydocker, htop, DuckDB |
+| Other tools | : | lazydocker, htop, DuckDB, dbt |
 
 ## Luồng dữ liệu di chuyển (data lineage flow)
 
@@ -38,11 +39,11 @@ Dữ liệu di chuyển từ nguồn (API, file csv, file json...) -> lưu vào 
 
 ### giai đoạn 1: khai phá dữ liệu (data mining)
 
-Dữ liệu sẽ được đọc từ nguồn (Data Source), được khai phá bằng `jupyter-all-spark`, viết thử light / heavy transform, refactor code rồi đóng gói lại thành các hàm để sử dụng trong file .py
+Dữ liệu sẽ được đọc từ nguồn (Data Source), được khai phá bằng `jupyter-all-spark` (một image có sẵn trên docker hub, dùng để EDA, mining trong học tập) `DuckDB` (light weight module, áp dụng kỹ thuật của apache arrow xử lý dữ liệu rất nhanh), viết thử light / heavy transform, refactor code rồi đóng gói lại thành các hàm để sử dụng trong file .py
 
 ### giai đoạn 2: xử lý dữ liệu (data processing)
 
-Vẫn giống như trên, tuy nhiên viết chỉnh chu hơn, đóng gói thành các hàm, viết docstring, chia thành các section. dùng `spark-submit` và đánh giá performance, hiệu năng xử lý 36M dòng => 1.2M dòng => bắn vào database (Mysql) thông qua JDBC.
+Vẫn giống như trên, tuy nhiên viết chỉnh chu hơn, đóng gói thành các hàm, viết docstring, chia thành các section. dùng `spark-submit` và đánh giá performance, hiệu năng xử lý 48M dòng => 1.9M dòng => bắn vào database (Mysql) thông qua JDBC.
 
 ### giai đoạn 3: 
 
@@ -68,3 +69,12 @@ nghịch thử DuckDB (Done) \
 ## Folder Structure
 
 ## Author / Version
+
+ext install dbtLabsInc.dbt
+
+
+python3.xx -m venv .venv
+
+source .venv/bin/activate
+
+pip install dbt-core dbt-postgres

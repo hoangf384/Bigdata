@@ -1,9 +1,10 @@
+import os
+from datetime import datetime
+
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as F
 from pyspark.sql.functions import col
 from pyspark.sql.window import Window
-import os
-from datetime import datetime
 
 
 # -----------------------------------
@@ -14,7 +15,7 @@ from datetime import datetime
 spark = (
     SparkSession.builder
     .appName("Local-ETL-Test")
-    .master("local[*]")
+    .master("spark://spark-master:7077")
     .config("spark.driver.memory", "2g")
     .config("spark.sql.files.maxPartitionBytes", 256 * 1024 * 1024) # 256 * 1024 * 1024 bytes
     .config("spark.sql.shuffle.partitions", "200") # 200 partitions for shuffle operations

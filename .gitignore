@@ -1,6 +1,8 @@
 .idea/
 .venv/
 .vscode/
+.env
+
 Airflow/config/
 Airflow/logs/
 Airflow/docker-compose.yaml.save
@@ -11,3 +13,4 @@ Code/spark-apps/scala/
 .gitignore
 
 DuckDB/
+models/

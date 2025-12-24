@@ -1,5 +1,6 @@
-import os
+import os 
 from datetime import datetime
+
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.functions import lit, when, col
@@ -108,7 +109,7 @@ def import_to_mysql(df, config= MYSQL_CONFIG):
         Hàm không trả về giá trị.
     """
 
-    url = f"jdbc:mysql://{config['host']}:{config['port']}/{config['database']}"
+    url = f"jdbc:mysql://{config['host']}:{config['port']}/{config['database']}" 
 
     (
         df.write
@@ -124,6 +125,7 @@ def import_to_mysql(df, config= MYSQL_CONFIG):
     )
 
     print("Data imported successfully to MySQL")
+
 
 # -------------------------
 # Transform steps
@@ -210,7 +212,7 @@ def pivot_table(df):
       phù hợp cho các bước phân tích OLAP tiếp theo.
     """
 
-    # 1) groupBy Contract,Type và sum TotalDuration
+    # 1) groupBy Contract, Type và sum TotalDuration
     summary = (
         df.groupBy("Contract", "Type")
           .agg(F.sum(F.col("TotalDuration").cast("long")).alias("TotalDuration"))
@@ -274,10 +276,11 @@ def most_watch(df):
       lên dữ liệu raw hoặc daily-level.
     """
 
-    df= df.withColumn("MostWatch", 
+    df = df.withColumn("MostWatch", 
                      F.greatest(col("Giai Tri"), col("Phim Truyen"), col("The Thao"), col("Thieu Nhi"), col("Truyen Hinh"))
                      )
-    df= df.withColumn("MostWatch",
+    
+    df = df.withColumn("MostWatch",
                     when(col("MostWatch") == col("Truyen Hinh"),"Truyen Hinh").
                     when(col("MostWatch") == col("Phim Truyen"),"Phim Truyen").
                     when(col("MostWatch") == col("The Thao"),"The Thao").
@@ -329,7 +332,7 @@ def customer_taste(df):
     - Được thiết kế để sử dụng sau bước tổng hợp dữ liệu ở mức customer
       và không nên áp dụng trực tiếp lên dữ liệu raw hoặc daily-level.
     """
-    df=df.withColumn("Taste", 
+    df = df.withColumn("Taste", 
                      F.concat_ws("-",
                                  when(col("Giai Tri") != 0, lit("Giai Tri")),
                                  when(col("Phim Truyen") != 0, lit("Phim Truyen")),

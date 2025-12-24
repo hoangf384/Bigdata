@@ -64,6 +64,7 @@ trước tiên thì phải thêm jars từ bên ngoài đã, trong file compose 
 chạy bash như lệnh trên
 ``` 
 
+log content
 ```bash
 /opt/spark/bin/spark-submit \
   --master spark://spark-master:7077 \
@@ -71,6 +72,17 @@ chạy bash như lệnh trên
   --jars /opt/spark/jars_external/mysql-connector-j-8.4.0.jar \
   /code/spark-apps/ETL_30_days_v3.py
 ```
+
+log_search
+
+```bash
+/opt/spark/bin/spark-submit \
+  --master spark://spark-master:7077 \
+  --deploy-mode client \
+  --jars /opt/spark/jars_external/mysql-connector-j-8.4.0.jar \
+  /code/spark-apps/ETL_log_search_v1.py
+```
+
 ### DuckDB
 gọi ui lên truy vấn
 ```bash

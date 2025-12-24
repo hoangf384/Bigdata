@@ -57,5 +57,3 @@ tree -d -L 3
     ├── jars
     └── logs
 ```
-
-Em chưa upload lên hết được vì vẫn chưa làm xong, hiện tại em để cá nhân, 

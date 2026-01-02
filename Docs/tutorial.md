@@ -2,10 +2,7 @@
 
 - [x] chạy full load vào db (overlap) và không chạy lại
 
-- [ ] kiểm tra log search, nối log search với nhau với nhau
+- [x] kiểm tra log search, nối log search với nhau với nhau
 
+- [x] hoàn thành pipeline trong log search, đẩy vào database va xuất file
 
-
-- [ ] chạy full load log search vào db và không chạy lại
-
-- [ ]

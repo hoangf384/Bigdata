@@ -51,7 +51,7 @@ docker exec -it spark-master /bin/bash
 /opt/spark/bin/spark-submit \
   --master spark://spark-master:7077 \
   --deploy-mode client \
-  /code/spark-apps/ETL_30_days_v2.py
+  /code/spark-apps/ETL_30_days_v3.py
 ```
 
 

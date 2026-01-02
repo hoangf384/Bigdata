@@ -559,14 +559,6 @@ async def control_flow_async():
     await queue.put(None)   
     await writer
 
-    mapping_df = read_jsonl(mapping_path).unique(
-        subset=["keyword"], keep="last"
-    )
-
-    final_df = join_category(data, mapping_df)
-    save_data(final_df, save_path + "final.parquet")
-
-
 
 
 if __name__ == "__main__": 

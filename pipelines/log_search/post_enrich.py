@@ -13,14 +13,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# --------------------------
-# init, spark, config and loging
-# --------------------------
+import os
 
 spark = (
     SparkSession.builder
     .appName("post-enrich")
-    .master("spark://spark-master:7077")
+    .master(os.environ.get("SPARK_MASTER", "spark://spark-master:7077"))
     .config("spark.driver.memory", "4g")
     .config("spark.sql.files.maxPartitionBytes", 256 * 1024 * 1024)
     .config("spark.sql.shuffle.partitions", "200")
@@ -29,12 +27,12 @@ spark = (
 spark.sparkContext.setLogLevel("ERROR")
 
 MYSQL_CONFIG = {
-    "host": "mysql",
-    "port": "3306",
-    "database": "mydb",
+    "host": os.environ.get("MYSQL_HOST", "mysql"),
+    "port": os.environ.get("MYSQL_PORT", "3306"),
+    "database": os.environ.get("MYSQL_DATABASE", "mydb"),
     "table": "customer_search_stats",
-    "user": "user",
-    "password": "password",
+    "user": os.environ.get("MYSQL_USER", "user"),
+    "password": os.environ.get("MYSQL_PASSWORD", "password"),
     "driver": "com.mysql.cj.jdbc.Driver"
 }
 
@@ -42,12 +40,12 @@ MYSQL_CONFIG = {
 # Folder
 # --------------------------
 
-log_search = "/data/destination/log_search/"
+log_search_dest = os.environ.get("LOG_SEARCH_DEST_PATH", "/data/destination/log_search/")
 
-mapping_file = log_search + "/category/" # json
+mapping_file = log_search_dest + "/category/" # json
 
-m6 = log_search + "month=6/" # csv 
-m7 = log_search + "month=7/" # csv
+m6 = log_search_dest + "month=6/" # csv 
+m7 = log_search_dest + "month=7/" # csv
 
 
 # --------------------------

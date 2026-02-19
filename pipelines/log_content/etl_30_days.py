@@ -390,7 +390,7 @@ def find_active(df):
       (serving layer / mart) cho mục đích phân tích và báo cáo.
     """
     w = Window.partitionBy("Contract")
-    df = df.withColumn("Active", F.count("Date").over(w))
+    df = df.withColumn("Active", F.countDistinct("Date").over(w))
     df = (
         df.groupBy("Contract")
         .agg(

@@ -1,1 +1,0 @@
-SELECT * FROM customer_content_stats

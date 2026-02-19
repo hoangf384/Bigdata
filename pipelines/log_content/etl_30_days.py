@@ -11,10 +11,12 @@ from pyspark.sql.window import Window
 # Spark session
 # --------------------------
 
+SPARK_MASTER = os.environ.get("SPARK_MASTER", "spark://spark-master:7077")
+
 spark = (
     SparkSession.builder
-    .appName("ETL-30Days-v3")
-    .master("spark://spark-master:7077")
+    .appName("ETL-30Days")
+    .master(SPARK_MASTER)
     .config("spark.driver.memory", "4g")
     .config("spark.sql.files.maxPartitionBytes", 256 * 1024 * 1024)
     .config("spark.sql.shuffle.partitions", "200")
@@ -23,12 +25,12 @@ spark = (
 spark.sparkContext.setLogLevel("ERROR")
 
 MYSQL_CONFIG = {
-    "host": "mysql",
-    "port": "3306",
-    "database": "mydb",
+    "host": os.environ.get("MYSQL_HOST", "mysql"),
+    "port": os.environ.get("MYSQL_PORT", "3306"),
+    "database": os.environ.get("MYSQL_DATABASE", "mydb"),
     "table": "customer_content_stats",
-    "user": "user",
-    "password": "password",
+    "user": os.environ.get("MYSQL_USER", "user"),
+    "password": os.environ.get("MYSQL_PASSWORD", "password"),
     "driver": "com.mysql.cj.jdbc.Driver"
 }
 
@@ -36,8 +38,8 @@ MYSQL_CONFIG = {
 # Paths (update as needed)
 # -------------------------
 
-folder_path = "/data/raw/log_content/"
-save_path = "/data/destination/log_content/"
+folder_path = os.environ.get("LOG_CONTENT_RAW_PATH", "/data/raw/log_content/")
+save_path = os.environ.get("LOG_CONTENT_DEST_PATH", "/data/destination/log_content/")
 
 # -------------------------
 # Helpers: IO

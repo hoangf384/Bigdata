@@ -12,13 +12,15 @@ from pyspark.sql.window import Window
 # -----------------------------------
 
 
+SPARK_MASTER = os.environ.get("SPARK_MASTER", "spark://spark-master:7077")
+
 spark = (
     SparkSession.builder
-    .appName("Local-ETL-Test")
-    .master("spark://spark-master:7077")
+    .appName("ETL-LogSearch")
+    .master(SPARK_MASTER)
     .config("spark.driver.memory", "2g")
-    .config("spark.sql.files.maxPartitionBytes", 256 * 1024 * 1024) # 256 * 1024 * 1024 bytes
-    .config("spark.sql.shuffle.partitions", "200") # 200 partitions for shuffle operations
+    .config("spark.sql.files.maxPartitionBytes", 256 * 1024 * 1024)
+    .config("spark.sql.shuffle.partitions", "200")
     .getOrCreate()
 )
 spark.sparkContext.setLogLevel("ERROR")
@@ -29,9 +31,8 @@ spark.sparkContext.setLogLevel("ERROR")
 # -----------------------------------
 
 
-folder_path = f"/data/raw/log_search/"
-date_file = sorted(os.listdir(folder_path))
-save_path = f"/data/destination/log_search/"
+folder_path = os.environ.get("LOG_SEARCH_RAW_PATH", "/data/raw/log_search/")
+save_path = os.environ.get("LOG_SEARCH_DEST_PATH", "/data/destination/log_search/")
 
 
 # -----------------------------------
@@ -248,6 +249,8 @@ def control_flow():
     >>> control_flow()
     """
     
+    date_file = sorted(os.listdir(folder_path))  # read at runtime, not import time
+
     final_df = None
     df = None
 

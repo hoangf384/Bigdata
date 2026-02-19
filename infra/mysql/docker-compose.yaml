@@ -1,0 +1,43 @@
+services:
+  mysql:
+    image: mysql:lts
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      TZ: UTC
+
+    command:
+      [
+        "--character-set-server=utf8mb4",
+        "--collation-server=utf8mb4_unicode_ci",
+        "--max_connections=200",
+        "--innodb_buffer_pool_size=512M"
+      ]
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - db-volume:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d
+      - ./conf.d:/etc/mysql/conf.d
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - spark-net
+
+networks:
+  spark-net:
+   external: true
+
+volumes:
+  db-volume:

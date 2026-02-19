@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:14.20-alpine3.23
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: ${DB_DATA_DIR}
+    volumes:
+      - ./data/postgres:${DB_DATA_DIR}
+    networks:
+      - spark-net
+
+  metabase:
+    image: metabase/metabase:v0.57.7.8
+    restart: always
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: ${DB_NAME}
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${DB_USER}
+      MB_DB_PASS: ${DB_PASSWORD}
+      MB_DB_HOST: db
+      MB_PASSWORD_COMPLEXITY: strong
+      MB_PASSWORD_LENGTH: 10
+      JAVA_TIMEZONE: ${MB_JAVA_TIMEZONE}
+    ports:
+      - 127.0.0.1:${MB_PORT}:3000
+    depends_on:
+      - db
+    networks:
+      - spark-net
+
+networks:
+  spark-net:
+    external: true

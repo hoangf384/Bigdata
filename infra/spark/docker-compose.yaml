@@ -6,7 +6,7 @@ services:
     image: spark-custom:3.5.1
     container_name: spark-master
     ports:
-      - "18080:8080"
+      - "8080:8080"
       - "7077:7077"
     command: >
       /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
@@ -15,7 +15,7 @@ services:
       - SPARK_MASTER_WEBUI_PORT=8080
     volumes:
       - /home/hp/Bigdata/data:/data:z
-      - /home/hp/Bigdata/pipelines:/code:z
+      - /home/hp/Bigdata/pipelines:/pipelines:z
     networks:
       - spark-net
 
@@ -25,7 +25,7 @@ services:
     depends_on:
       - spark-master
     ports:
-      - "18081:8081"
+      - "8081:8081"
     command: >
       /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker
         --cores 4
@@ -35,7 +35,7 @@ services:
       - SPARK_WORKER_WEBUI_PORT=8081
     volumes:
       - /home/hp/Bigdata/data:/data:z
-      - /home/hp/Bigdata/pipelines:/code:z
+      - /home/hp/Bigdata/pipelines:/pipelines:z
     networks:
       - spark-net
 

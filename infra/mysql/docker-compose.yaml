@@ -10,13 +10,10 @@ services:
       MYSQL_PASSWORD: password
       TZ: UTC
 
-    command:
-      [
-        "--character-set-server=utf8mb4",
-        "--collation-server=utf8mb4_unicode_ci",
-        "--max_connections=200",
-        "--innodb_buffer_pool_size=512M"
-      ]
+    env_file:
+      - ../../.env
+
+    command: [ "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--max_connections=200", "--innodb_buffer_pool_size=512M" ]
 
     ports:
       - "3306:3306"
@@ -27,7 +24,7 @@ services:
       - ./conf.d:/etc/mysql/conf.d
 
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,7 +34,7 @@ services:
 
 networks:
   spark-net:
-   external: true
+    external: true
 
 volumes:
   db-volume:

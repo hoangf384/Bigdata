@@ -7,6 +7,7 @@
 ## Mục lục
 
 1. [Tổng quan](#1-tổng-quan)
+2. 
 2. [Kiến trúc hệ thống (UML)](#2-kiến-trúc-hệ-thống-uml)
 3. [Tech Stack](#3-tech-stack)
 4. [Pipeline chi tiết](#4-pipeline-chi-tiết)
@@ -14,7 +15,7 @@
    - [Pipeline 2 – log_search ETL + LLM Enrichment](#pipeline-2--log_search-etl--llm-enrichment)
 5. [Cấu trúc thư mục](#5-cấu-trúc-thư-mục)
 6. [Đã làm được](#6-đã-làm-được)
-7. [Kế hoạch tiếp theo](#7-kế-hoạch-tiếp-theo)
+7. [GCP Migration](#7-gcp-migration)
 8. [Key Learnings](#8-key-learnings)
 9. [Hướng dẫn chạy](#9-hướng-dẫn-chạy)
 
@@ -29,9 +30,36 @@ Project mô phỏng hệ thống phân tích khách hàng của một nền tả
 
 Từ raw log, hệ thống tổng hợp ra **customer profile 30 ngày**: mỗi khách hàng xem gì nhiều nhất, tìm kiếm gì, và sở thích có thay đổi theo tháng không.
 
+
+## 2. Key Learnings
+
+### Apache Spark
+- Hiểu **lazy evaluation**: transformation chỉ thực thi khi có action
+- `spark.sql.shuffle.partitions` ảnh hưởng lớn đến performance với groupBy/join
+- `repartition()` trước khi write giúp kiểm soát số file output
+- `unionByName()` an toàn hơn `union()` khi schema có thể khác thứ tự cột
+- JDBC write với `batchsize=10000` tăng tốc đáng kể so với mặc định
+
+### Python Async
+- `asyncio.Semaphore` để giới hạn concurrent API calls, tránh rate limit
+- **Producer–Consumer pattern** với `asyncio.Queue`: tách logic gọi API và ghi file
+- Buffered I/O + `os.fsync()` đảm bảo dữ liệu không mất khi crash
+- Checkpoint bằng cách đọc file đã ghi → skip những gì đã xử lý (resume-safe)
+
+### Docker & Infrastructure
+- Hiểu volume mount giữa host và container (`:z` flag cho SELinux trên Fedora)
+- External network `spark-net` để các compose file khác nhau giao tiếp
+- JDBC JAR phải được mount vào đúng classpath của Spark executor
+
+### Data Engineering Patterns
+- **Grain**: luôn xác định rõ grain của DataFrame trước khi transform
+- **Pivot table**: chuyển long format → wide format cho customer-level analytics
+- **Window function**: `row_number().over(Window.partitionBy())` để lấy top-1 per group
+- **LLM as enrichment layer**: dùng LLM để label unstructured data (keyword → category)
+
 ---
 
-## 2. Kiến trúc hệ thống (UML)
+## 3. Kiến trúc hệ thống (UML)
 
 ```mermaid
 flowchart TB
@@ -40,7 +68,7 @@ flowchart TB
         S2["log_search/*.parquet<br/>(daily)"]
     end
 
-    subgraph Processing["Data Transformation - Python + Spark"]
+    subgraph Processing["Data Transformation"]
         subgraph P1["Pipeline 1"]
             C1["ETL 30 days"]
         end
@@ -60,15 +88,13 @@ flowchart TB
         M1[("MySQL<br/>customer_content_stats")]
         M2[("MySQL<br/>customer_search_stats")]
         V1["Metabase"]
-        V2["DuckDB"]
         M1 --> V1
         M2 --> V1
-        M2 --> V2
     end
 
-    S1 --> C1 --> M1
-    S2 --> E1
-    S2 --> E2
+    S1 --"Spark"--> C1 --> M1
+    S2 --"Spark"--> E1
+    S2 --"Python"--> E2
     E2 -- "API Call" --> OpenAI
     OpenAI -- "Response" --> E2
     E4 --> M2
@@ -76,11 +102,11 @@ flowchart TB
 
 ---
 
-## 3. Tech Stack
+## 4. Tech Stack
 
 | Nhóm | Công cụ | Mục đích |
 |---|---|---|
-| **Core Processing** | Apache Spark 4.x (PySpark) | ETL, distributed processing |
+| **Core Processing** | Apache Spark 3.5.1 (PySpark) | ETL, distributed processing |
 | **LLM Enrichment** | OpenAI API (async) | Phân loại keyword tìm kiếm |
 | **Storage** | MySQL (LTS) | Serving layer, OLAP |
 | **BI & Visualization** | Metabase | Dashboard, ad-hoc query |
@@ -89,7 +115,7 @@ flowchart TB
 
 ---
 
-## 4. Pipeline chi tiết
+## 5. Pipeline chi tiết
 
 ### Pipeline 1 – log_content ETL
 
@@ -134,20 +160,20 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    A["raw parquet(daily)"] --> B["datetime_transform\nnormalize date"]
+    A["raw parquet(daily)"] --> B["datetime_transform<br/>normalize date"]
     B --> C["union by month"]
-    C --> D["most_watch\ntop keyword/user"]
-    D --> E["CSV: month=6\nmonth=7"]
+    C --> D["most_watch<br/>top keyword/user"]
+    D --> E["CSV: month=6<br/>month=7"]
 
-    K["raw keywords"] --> L["enrich_v1.py\nasync OpenAI\nbatch 500 - 8 workers"]
-    L --> M["mapping.jsonl\nkeyword - category"]
-    M --> N["mapping.py\ncategory_std"]
+    K["raw keywords"] --> L["enrich_v1.py<br/>async OpenAI<br/>batch 500 - 8 workers"]
+    L --> M["mapping.jsonl<br/>keyword - category"]
+    M --> N["mapping.py<br/>category_std"]
 
-    E --> O["join keyword\nto category"]
+    E --> O["join keyword<br/>to category"]
     N --> O
     O --> P["join June + July"]
-    P --> Q["customertaste\nUnchanged / Changed"]
-    Q --> R[("MySQL\ncustomer_search_stats")]
+    P --> Q["customertaste<br/>Unchanged / Changed"]
+    Q --> R[("MySQL<br/>customer_search_stats")]
 ```
 
 **Điểm kỹ thuật nổi bật:**
@@ -158,7 +184,7 @@ flowchart TD
 
 ---
 
-## 5. Cấu trúc thư mục
+## 6. Cấu trúc thư mục
 
 ```
 Bigdata/
@@ -167,22 +193,22 @@ Bigdata/
 │   │   └── etl_30_days.py          ← Pipeline 1
 │   └── log_search/
 │       ├── etl_log_search.py       ← Pipeline 2a: ETL theo tháng
-│       ├── enrich_v1.py            ← Pipeline 2b: LLM enrichment
+│       ├── enrich_v1.py            ← Pipeline 2b: LLM enrichment (async OpenAI)
 │       ├── mapping.py              ← Pipeline 2c: Spark category std
 │       └── post_enrich.py          ← Pipeline 2d: join + load MySQL
 │
-├── notebooks/                      ← EDA & prototyping (6 notebooks)
-│   ├── class 5.ipynb               ← ETL experiments
+├── notebooks/                      ← EDA & prototyping
+│   ├── log_content_eda.ipynb       ← ETL 5-day demo với docstring đầy đủ
+│   ├── log_content_prototype.ipynb ← ETL prototype v1 (có Device_Count)
 │   ├── log_search_v1.ipynb         ← log search EDA
 │   └── enrich.ipynb                ← LLM enrichment test
 │
-├── queries/queries/                ← SQL analysis queries
+├── warehouse/queries/              ← SQL analysis queries
 │
 ├── infra/
 │   ├── spark/
-│   │   ├── docker-compose.yaml     ← 1 master + 2 workers
-│   │   ├── Dockerfile              ← custom image + JDBC jars
-│   │   └── jars/                   ← MySQL connector JAR
+│   │   ├── docker-compose.yaml     ← 1 master + 1 worker
+│   │   └── Dockerfile              ← custom Spark image (MySQL JDBC baked in)
 │   ├── mysql/
 │   │   ├── docker-compose.yaml
 │   │   └── init/                   ← init SQL scripts
@@ -199,22 +225,22 @@ Bigdata/
 
 ---
 
-## 6. Đã làm được
+## 7. Đã làm được
 
-### ✅ Infrastructure
+### Infrastructure
 - [x] Dựng Spark cluster local bằng Docker (1 master + 2 workers)
 - [x] Cấu hình MySQL với healthcheck, utf8mb4, connection pool
 - [x] Setup Metabase kết nối MySQL để visualize
 - [x] Cấu hình Jupyter Notebook với Spark kernel
 
-### ✅ Pipeline 1 – log_content
+### Pipeline 1 – log_content
 - [x] Đọc và xử lý 48M rows JSON → 1.9M rows sau aggregate
 - [x] Transform: flatten nested JSON, map AppName → category
 - [x] Tính `Active`, `MostWatch`, `Taste` cho mỗi khách hàng
 - [x] Load vào MySQL qua JDBC (batch insert 10K rows)
 - [x] Refactor qua 3 versions, version cuối có docstring đầy đủ
 
-### ✅ Pipeline 2 – log_search
+### Pipeline 2 – log_search
 - [x] ETL log search theo ngày → tổng hợp theo tháng
 - [x] Tìm keyword được search nhiều nhất của từng user (`mostWatch`)
 - [x] LLM enrichment với OpenAI: phân loại ~unique keywords thành 13 categories
@@ -222,60 +248,24 @@ Bigdata/
 - [x] Join 2 tháng, tạo cột `taste` (Unchanged/Changed)
 - [x] Load kết quả vào MySQL
 
-### ✅ Project Organization
+### Project Organization
 - [x] Tái cấu trúc project từ flat → pipeline-based layout
 - [x] Xóa deprecated ETL versions (v1, v2)
 - [x] Gitignore logs, data, venv
 - [x] Viết README đầy đủ với Mermaid diagrams
 
----
 
-## 7. Kế hoạch tiếp theo
+## 8. GCP Migration (planned)
 
-### 🔲 Ngắn hạn
-- [ ] Viết SQL queries phân tích: top content by region, churn prediction features
-- [ ] Hoàn thiện Metabase dashboard: 3–5 charts từ `customer_content_stats`
-- [ ] Update volume paths trong `infra/spark/docker-compose.yaml` (hiện trỏ path cũ)
-- [ ] Viết `init/` SQL schema cho MySQL (hiện đang rỗng)
+> **Mục tiêu:** Chuyển toàn bộ pipeline lên GCP — giữ nguyên logic ETL, không cần viết lại code, chỉ đổi config và output target.
 
-### 🔲 Trung hạn
-- [ ] Thêm **Kafka** để simulate real-time log ingestion
-- [ ] Viết **Airflow DAG** orchestrate Pipeline 2 (4 bước phụ thuộc nhau)
-- [ ] Thêm **dbt** để quản lý SQL transformation layer
-- [ ] Thêm **data quality checks** (Great Expectations hoặc tự viết)
-
-### 🔲 Dài hạn
-- [ ] Deploy lên cloud (AWS EMR hoặc GCP Dataproc)
-- [ ] Thêm **Cassandra** làm hot storage cho real-time query
-- [ ] Viết Scala version của ETL để so sánh performance với PySpark
-
----
-
-## 8. Key Learnings
-
-### Apache Spark
-- Hiểu **lazy evaluation**: transformation chỉ thực thi khi có action
-- `spark.sql.shuffle.partitions` ảnh hưởng lớn đến performance với groupBy/join
-- `repartition()` trước khi write giúp kiểm soát số file output
-- `unionByName()` an toàn hơn `union()` khi schema có thể khác thứ tự cột
-- JDBC write với `batchsize=10000` tăng tốc đáng kể so với mặc định
-
-### Python Async
-- `asyncio.Semaphore` để giới hạn concurrent API calls, tránh rate limit
-- **Producer–Consumer pattern** với `asyncio.Queue`: tách logic gọi API và ghi file
-- Buffered I/O + `os.fsync()` đảm bảo dữ liệu không mất khi crash
-- Checkpoint bằng cách đọc file đã ghi → skip những gì đã xử lý (resume-safe)
-
-### Docker & Infrastructure
-- Hiểu volume mount giữa host và container (`:z` flag cho SELinux trên Fedora)
-- External network `spark-net` để các compose file khác nhau giao tiếp
-- JDBC JAR phải được mount vào đúng classpath của Spark executor
-
-### Data Engineering Patterns
-- **Grain**: luôn xác định rõ grain của DataFrame trước khi transform
-- **Pivot table**: chuyển long format → wide format cho customer-level analytics
-- **Window function**: `row_number().over(Window.partitionBy())` để lấy top-1 per group
-- **LLM as enrichment layer**: dùng LLM để label unstructured data (keyword → category)
+| Hiện tại (Local Docker) | GCP |
+|---|---|
+| `/data/raw/` (local disk) | **Cloud Storage (GCS)** `gs://bucket/raw/` |
+| Spark cluster (Docker Compose) | *None* |
+| MySQL (Docker) | **BigQuery** |
+| Metabase | **Looker Studio** (free, connect thẳng BigQuery) |
+| Chạy thủ công | **Cloud Composer** (Airflow managed) |
 
 ---
 
@@ -299,7 +289,7 @@ docker compose -f infra/metabase/docker-compose.yaml up -d
 ```bash
 docker exec spark-master /opt/spark/bin/spark-submit \
   --master spark://spark-master:7077 \
-  --jars /opt/spark/jars_external/mysql-connector-j-8.4.0.jar \
+  --deploy-mode client \
   /code/pipelines/log_content/etl_30_days.py
 ```
 
@@ -308,28 +298,27 @@ docker exec spark-master /opt/spark/bin/spark-submit \
 ```bash
 # Bước 1: ETL log search
 docker exec spark-master /opt/spark/bin/spark-submit \
+  --master spark://spark-master:7077 \
+  --deploy-mode client \
   /code/pipelines/log_search/etl_log_search.py
 
 # Bước 2: LLM enrichment (local, cần .env với OPENAI_API_KEY)
+# Data đã enrich sẵn — bước này chỉ cần chạy lại khi có keyword mới
 source .venv/bin/activate
 python pipelines/log_search/enrich_v1.py
 
 # Bước 3: Spark category mapping
 docker exec spark-master /opt/spark/bin/spark-submit \
+  --master spark://spark-master:7077 \
+  --deploy-mode client \
   /code/pipelines/log_search/mapping.py
 
 # Bước 4: Post enrich + load MySQL
 docker exec spark-master /opt/spark/bin/spark-submit \
-  --jars /opt/spark/jars_external/mysql-connector-j-8.4.0.jar \
+  --master spark://spark-master:7077 \
+  --deploy-mode client \
   /code/pipelines/log_search/post_enrich.py
 ```
-
-### DuckDB ad-hoc query
-
-```bash
-duckdb ~/Bigdata/DuckDB/db/mydatabase.duckdb -ui
-```
-
 ---
 
 *Project đang trong giai đoạn học tập và phát triển liên tục.*

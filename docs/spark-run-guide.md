@@ -9,9 +9,6 @@ Tài liệu hướng dẫn cách khởi động cụm Spark và chạy các Spar
 ```bash
 docker compose -f ~/Bigdata/infra/spark/docker-compose.yaml up -d
 ```
-
-> Lệnh này khởi động: `spark-master`, `spark-worker-1`, `spark-worker-2`
-
 Monitoring UI: [http://localhost:18080](http://localhost:18080)
 
 ---
@@ -22,7 +19,6 @@ Monitoring UI: [http://localhost:18080](http://localhost:18080)
 docker exec spark-master /opt/spark/bin/spark-submit \
   --master spark://spark-master:7077 \
   --deploy-mode client \
-  --jars /opt/spark/jars_external/mysql-connector-j-8.4.0.jar \
   /code/pipelines/log_content/etl_30_days.py
 ```
 
@@ -34,7 +30,6 @@ docker exec spark-master /opt/spark/bin/spark-submit \
 docker exec spark-master /opt/spark/bin/spark-submit \
   --master spark://spark-master:7077 \
   --deploy-mode client \
-  --jars /opt/spark/jars_external/mysql-connector-j-8.4.0.jar \
   /code/pipelines/log_search/etl_log_search.py
 ```
 
@@ -67,24 +62,7 @@ docker exec spark-master /opt/spark/bin/spark-submit \
 docker exec spark-master /opt/spark/bin/spark-submit \
   --master spark://spark-master:7077 \
   --deploy-mode client \
-  --jars /opt/spark/jars_external/mysql-connector-j-8.4.0.jar \
   /code/pipelines/log_search/post_enrich.py
 ```
 
----
 
-## 7. DuckDB UI
-
-```bash
-cd ~/Bigdata/Data && duckdb ~/Bigdata/DuckDB/db/mydatabase.duckdb -ui
-```
-
----
-
-## Lưu ý về JDBC JARs
-
-Volume mount trong `docker-compose.yaml`:
-```yaml
-- ~/Bigdata/infra/spark/jars:/opt/spark/jars_external
-```
-Cần pass `--jars /opt/spark/jars_external/mysql-connector-j-8.4.0.jar` khi submit job có kết nối MySQL.

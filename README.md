@@ -1,209 +1,335 @@
-# Big Data Tutorial
+# Big Data Pipeline – OTT Content Analytics
 
-> Hướng dẫn Big Data từ A–Z, bao gồm các công cụ phổ biến trong hệ sinh thái Big Data: Spark, Kafka, Cassandra, Superset, Airflow, Docker...
->
-> **Lưu ý:** Toàn bộ project chạy trên máy tính cá nhân, không dùng cloud.
+> **Mục tiêu:** Xây dựng end-to-end Big Data pipeline xử lý log xem nội dung và log tìm kiếm của một hệ thống truyền hình OTT, chạy hoàn toàn trên máy cá nhân (không dùng cloud).
 
 ---
 
 ## Mục lục
 
-1. [Kiến trúc](#kiến-trúc)
-2. [Tech Stack](#tech-stack)
-3. [Data Flow](#data-flow)
-4. [Folder Structure](#folder-structure)
-5. [Run Instructions](#run-instructions)
-6. [Author](#author)
+1. [Tổng quan](#1-tổng-quan)
+2. [Kiến trúc hệ thống (UML)](#2-kiến-trúc-hệ-thống-uml)
+3. [Tech Stack](#3-tech-stack)
+4. [Pipeline chi tiết](#4-pipeline-chi-tiết)
+   - [Pipeline 1 – log_content ETL](#pipeline-1--log_content-etl)
+   - [Pipeline 2 – log_search ETL + LLM Enrichment](#pipeline-2--log_search-etl--llm-enrichment)
+5. [Cấu trúc thư mục](#5-cấu-trúc-thư-mục)
+6. [Đã làm được](#6-đã-làm-được)
+7. [Kế hoạch tiếp theo](#7-kế-hoạch-tiếp-theo)
+8. [Key Learnings](#8-key-learnings)
+9. [Hướng dẫn chạy](#9-hướng-dẫn-chạy)
 
 ---
 
-## Kiến trúc
+## 1. Tổng quan
 
-Project xử lý **log xem nội dung** và **log tìm kiếm** của một hệ thống truyền hình OTT, với 2 pipeline ETL độc lập, chạy trên Spark cluster (Docker) và nạp kết quả vào MySQL.
+Project mô phỏng hệ thống phân tích khách hàng của một nền tảng OTT (Over-The-Top) truyền hình Việt Nam. Dữ liệu bao gồm:
+
+- **log_content**: Log hành vi xem nội dung (phim, thể thao, thiếu nhi...) của từng khách hàng, dạng JSON theo ngày
+- **log_search**: Log từ khoá tìm kiếm của người dùng, dạng Parquet theo ngày
+
+Từ raw log, hệ thống tổng hợp ra **customer profile 30 ngày**: mỗi khách hàng xem gì nhiều nhất, tìm kiếm gì, và sở thích có thay đổi theo tháng không.
+
+---
+
+## 2. Kiến trúc hệ thống (UML)
 
 ```mermaid
 flowchart TB
-    subgraph Sources["Data Sources"]
-        S1["log_content/*.json"]
-        S2["log_search/*.parquet"]
-        S3["OpenAI API"]
+    subgraph Sources["Data Ingestion"]
+        S1["log_content/*.json<br/>(daily, ~48M rows)"]
+        S2["log_search/*.parquet<br/>(daily)"]
     end
 
-    subgraph Cluster["Spark Cluster - Docker"]
-        SM["spark-master\n:7077"]
-        W1["spark-worker-1\n4 cores / 3G"]
-        W2["spark-worker-2\n4 cores / 3G"]
-        SM --> W1
-        SM --> W2
+    subgraph Processing["Data Transformation - Python + Spark"]
+        subgraph P1["Pipeline 1"]
+            C1["ETL 30 days"]
+        end
+        subgraph P2["Pipeline 2"]
+            E1["ETL log search"]
+            E2["LLM Enrichment"]
+            E3["Category Mapping"]
+            E4["Post Enrich"]
+            E1 --> E4
+            E2 --> E3 --> E4
+        end
     end
 
-    subgraph Pipelines["ETL Pipelines"]
-        P1["Pipeline 1\nlog_content ETL"]
-        P2["Pipeline 2a\nlog_search ETL"]
-        P3["Pipeline 2b\nLLM Enrichment"]
-        P4["Pipeline 2c\nCategory Mapping"]
-        P5["Pipeline 2d\nPost Enrich"]
+    OpenAI(["OpenAI API"])
+
+    subgraph DB["Loading & Visualization"]
+        M1[("MySQL<br/>customer_content_stats")]
+        M2[("MySQL<br/>customer_search_stats")]
+        V1["Metabase"]
+        V2["DuckDB"]
+        M1 --> V1
+        M2 --> V1
+        M2 --> V2
     end
 
-    subgraph Storage["Storage Layer"]
-        DB1[("MySQL\ncustomer_content_stats")]
-        DB2[("MySQL\ncustomer_search_stats")]
-    end
-
-    subgraph BI["Analytics & BI"]
-        BI1["Metabase"]
-        BI2["Apache Superset"]
-        BI3["DataGrip"]
-    end
-
-    S1 --> Cluster --> P1 --> DB1
-    S2 --> Cluster --> P2 --> P5
-    S2 --> P3 --> P4 --> P5
-    S3 --> P3
-    P5 --> DB2
-    DB1 --> BI
-    DB2 --> BI
+    S1 --> C1 --> M1
+    S2 --> E1
+    S2 --> E2
+    E2 -- "API Call" --> OpenAI
+    OpenAI -- "Response" --> E2
+    E4 --> M2
 ```
 
 ---
 
-## Tech Stack
+## 3. Tech Stack
 
-| Category | Tools |
-|---|---|
-| Core Processing | Apache Spark (PySpark), Apache Airflow |
-| Storage | MySQL, Cassandra |
-| LLM Enrichment | OpenAI API (async, batch) |
-| BI & Visualization | Apache Superset, Metabase |
-| Prototyping | Jupyter Notebook, DuckDB, Polars |
-| Infrastructure | Docker, Docker Compose, Linux (Fedora) |
-| Source Control | Git, GitHub |
-| IDEs | VS Code, DataGrip |
+| Nhóm | Công cụ | Mục đích |
+|---|---|---|
+| **Core Processing** | Apache Spark 4.x (PySpark) | ETL, distributed processing |
+| **LLM Enrichment** | OpenAI API (async) | Phân loại keyword tìm kiếm |
+| **Storage** | MySQL (LTS) | Serving layer, OLAP |
+| **BI & Visualization** | Metabase | Dashboard, ad-hoc query |
+| **Prototyping** | Jupyter Notebook, DuckDB | EDA, light-weight transform |
+| **Infrastructure** | Docker, Docker Compose | Orchestrate all services |
 
 ---
 
-## Data Flow
+## 4. Pipeline chi tiết
 
-### Pipeline 1 – `log_content` (ETL 30 days)
+### Pipeline 1 – log_content ETL
+
+**File:** `pipelines/log_content/etl_30_days.py`  
+**Input:** `data/raw/log_content/*.json` (1 file/ngày, ~48M rows/30 ngày)  
+**Output:** MySQL table `customer_content_stats`
 
 ```mermaid
 flowchart LR
-    A["raw/log_content/*.json"] --> B["flatten _source.*"]
-    B --> C["map AppName to Type"]
-    C --> D["filter invalid Contract"]
-    D --> E["pivot: 1 row/Contract/day"]
+    A["raw JSON\n(daily)"] --> B["flatten _source.*"]
+    B --> C["map AppName to Type<br/>5 categories"]
+    C --> D["filter invalid\nContract"]
+    D --> E["pivot\n1 row/Contract/day"]
     E --> F["union 30 days"]
-    F --> G["find_active"]
-    G --> H["most_watch"]
-    H --> I["customer_taste"]
-    I --> J[("MySQL: customer_content_stats")]
+    F --> G["find_active\ndistinct dates"]
+    G --> H["most_watch\ngreatest duration"]
+    H --> I["customer_taste\ntypes used"]
+    I --> J[("MySQL\ncustomer_content_stats")]
 ```
 
-### Pipeline 2 – `log_search` (ETL + LLM Enrichment)
+**Schema output (1 row / Contract):**
 
-```mermaid
-flowchart TD
-    A["raw/log_search/*.parquet"] --> B["datetime_transform"]
-    B --> C["union by month"]
-    C --> D["most_watch per user_id"]
-    D --> E["CSV: month=6 / month=7"]
-
-    K["raw keywords"] --> L["enrich_v1.py\nasync OpenAI - batch 500"]
-    L --> M["mapping.jsonl"]
-    M --> N["mapping.py - category_std"]
-
-    E --> O["join: keyword to category"]
-    N --> O
-    O --> P["join June + July per user"]
-    P --> Q["customertaste\nUnchanged / Changed"]
-    Q --> R[("MySQL: customer_search_stats")]
-```
+| Cột | Mô tả |
+|---|---|
+| `Contract` | Mã khách hàng |
+| `Truyen Hinh` | Tổng duration xem truyền hình (30 ngày) |
+| `Phim Truyen` | Tổng duration xem phim |
+| `Giai Tri` | Tổng duration nội dung giải trí |
+| `Thieu Nhi` | Tổng duration nội dung thiếu nhi |
+| `The Thao` | Tổng duration thể thao |
+| `Active` | Số ngày distinct có hoạt động |
+| `MostWatch` | Thể loại xem nhiều nhất |
+| `Taste` | Combo thể loại đã dùng (vd: `Truyen Hinh-Phim Truyen`) |
 
 ---
 
-## Folder Structure
+### Pipeline 2 – log_search ETL + LLM Enrichment
+
+**Files:** `pipelines/log_search/` (4 scripts)  
+**Input:** `data/raw/log_search/*.parquet` + OpenAI API  
+**Output:** MySQL table `customer_search_stats`
+
+```mermaid
+flowchart TD
+    A["raw parquet(daily)"] --> B["datetime_transform\nnormalize date"]
+    B --> C["union by month"]
+    C --> D["most_watch\ntop keyword/user"]
+    D --> E["CSV: month=6\nmonth=7"]
+
+    K["raw keywords"] --> L["enrich_v1.py\nasync OpenAI\nbatch 500 - 8 workers"]
+    L --> M["mapping.jsonl\nkeyword - category"]
+    M --> N["mapping.py\ncategory_std"]
+
+    E --> O["join keyword\nto category"]
+    N --> O
+    O --> P["join June + July"]
+    P --> Q["customertaste\nUnchanged / Changed"]
+    Q --> R[("MySQL\ncustomer_search_stats")]
+```
+
+**Điểm kỹ thuật nổi bật:**
+- `enrich_v1.py` dùng **asyncio + Semaphore(8)** để gọi OpenAI song song, tránh rate limit
+- **Producer–Consumer pattern**: 8 API workers → Queue → 1 writer_worker (buffered I/O)
+- **Checkpoint/resume**: skip keyword đã classified, tránh gọi API lại khi restart
+- **Prompt Engineering**: rule-based prompt tiếng Việt, 13 categories, ưu tiên suy luận trước khi fallback `Other`
+
+---
+
+## 5. Cấu trúc thư mục
 
 ```
 Bigdata/
 ├── pipelines/
 │   ├── log_content/
-│   │   └── etl_30_days.py          ← Pipeline 1: 30-day content ETL
+│   │   └── etl_30_days.py          ← Pipeline 1
 │   └── log_search/
-│       ├── etl_log_search.py       ← Pipeline 2a: daily log → monthly summary
-│       ├── enrich_v1.py            ← Pipeline 2b: LLM keyword enrichment
-│       ├── mapping.py              ← Pipeline 2c: Spark category standardization
-│       └── post_enrich.py          ← Pipeline 2d: join + final output
+│       ├── etl_log_search.py       ← Pipeline 2a: ETL theo tháng
+│       ├── enrich_v1.py            ← Pipeline 2b: LLM enrichment
+│       ├── mapping.py              ← Pipeline 2c: Spark category std
+│       └── post_enrich.py          ← Pipeline 2d: join + load MySQL
 │
-├── notebooks/                      ← EDA & prototyping (Jupyter)
-│   ├── class 5.ipynb
-│   ├── log_search_v1.ipynb
-│   ├── enrich.ipynb
-│   └── ...
+├── notebooks/                      ← EDA & prototyping (6 notebooks)
+│   ├── class 5.ipynb               ← ETL experiments
+│   ├── log_search_v1.ipynb         ← log search EDA
+│   └── enrich.ipynb                ← LLM enrichment test
+│
+├── queries/queries/                ← SQL analysis queries
 │
 ├── infra/
 │   ├── spark/
-│   │   ├── docker-compose.yaml     ← Spark cluster (1 master, 2 workers)
-│   │   └── jars/                   ← MySQL JDBC + extra JARs
-│   └── mysql/                      ← MySQL config / init scripts
+│   │   ├── docker-compose.yaml     ← 1 master + 2 workers
+│   │   ├── Dockerfile              ← custom image + JDBC jars
+│   │   └── jars/                   ← MySQL connector JAR
+│   ├── mysql/
+│   │   ├── docker-compose.yaml
+│   │   └── init/                   ← init SQL scripts
+│   ├── metabase/
+│   │   └── docker-compose.yaml     ← BI dashboard
+│   └── jupyter/
+│       └── docker-compose.yaml
 │
-├── warehouse/
-│   └── queries/                    ← SQL queries for analysis
-│
-├── docs/                           ← Documentation, flowcharts
-├── data/                           ← Raw & processed data (gitignored)
-├── .env                            ← OPENAI_API_KEY, DB credentials
+├── docs/                           ← Tài liệu kỹ thuật
+├── .env                            ← API keys, DB credentials
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## Run Instructions
+## 6. Đã làm được
 
-### 1. Start Spark cluster
+### ✅ Infrastructure
+- [x] Dựng Spark cluster local bằng Docker (1 master + 2 workers)
+- [x] Cấu hình MySQL với healthcheck, utf8mb4, connection pool
+- [x] Setup Metabase kết nối MySQL để visualize
+- [x] Cấu hình Jupyter Notebook với Spark kernel
+
+### ✅ Pipeline 1 – log_content
+- [x] Đọc và xử lý 48M rows JSON → 1.9M rows sau aggregate
+- [x] Transform: flatten nested JSON, map AppName → category
+- [x] Tính `Active`, `MostWatch`, `Taste` cho mỗi khách hàng
+- [x] Load vào MySQL qua JDBC (batch insert 10K rows)
+- [x] Refactor qua 3 versions, version cuối có docstring đầy đủ
+
+### ✅ Pipeline 2 – log_search
+- [x] ETL log search theo ngày → tổng hợp theo tháng
+- [x] Tìm keyword được search nhiều nhất của từng user (`mostWatch`)
+- [x] LLM enrichment với OpenAI: phân loại ~unique keywords thành 13 categories
+- [x] Async pipeline với checkpoint/resume (không gọi API lại)
+- [x] Join 2 tháng, tạo cột `taste` (Unchanged/Changed)
+- [x] Load kết quả vào MySQL
+
+### ✅ Project Organization
+- [x] Tái cấu trúc project từ flat → pipeline-based layout
+- [x] Xóa deprecated ETL versions (v1, v2)
+- [x] Gitignore logs, data, venv
+- [x] Viết README đầy đủ với Mermaid diagrams
+
+---
+
+## 7. Kế hoạch tiếp theo
+
+### 🔲 Ngắn hạn
+- [ ] Viết SQL queries phân tích: top content by region, churn prediction features
+- [ ] Hoàn thiện Metabase dashboard: 3–5 charts từ `customer_content_stats`
+- [ ] Update volume paths trong `infra/spark/docker-compose.yaml` (hiện trỏ path cũ)
+- [ ] Viết `init/` SQL schema cho MySQL (hiện đang rỗng)
+
+### 🔲 Trung hạn
+- [ ] Thêm **Kafka** để simulate real-time log ingestion
+- [ ] Viết **Airflow DAG** orchestrate Pipeline 2 (4 bước phụ thuộc nhau)
+- [ ] Thêm **dbt** để quản lý SQL transformation layer
+- [ ] Thêm **data quality checks** (Great Expectations hoặc tự viết)
+
+### 🔲 Dài hạn
+- [ ] Deploy lên cloud (AWS EMR hoặc GCP Dataproc)
+- [ ] Thêm **Cassandra** làm hot storage cho real-time query
+- [ ] Viết Scala version của ETL để so sánh performance với PySpark
+
+---
+
+## 8. Key Learnings
+
+### Apache Spark
+- Hiểu **lazy evaluation**: transformation chỉ thực thi khi có action
+- `spark.sql.shuffle.partitions` ảnh hưởng lớn đến performance với groupBy/join
+- `repartition()` trước khi write giúp kiểm soát số file output
+- `unionByName()` an toàn hơn `union()` khi schema có thể khác thứ tự cột
+- JDBC write với `batchsize=10000` tăng tốc đáng kể so với mặc định
+
+### Python Async
+- `asyncio.Semaphore` để giới hạn concurrent API calls, tránh rate limit
+- **Producer–Consumer pattern** với `asyncio.Queue`: tách logic gọi API và ghi file
+- Buffered I/O + `os.fsync()` đảm bảo dữ liệu không mất khi crash
+- Checkpoint bằng cách đọc file đã ghi → skip những gì đã xử lý (resume-safe)
+
+### Docker & Infrastructure
+- Hiểu volume mount giữa host và container (`:z` flag cho SELinux trên Fedora)
+- External network `spark-net` để các compose file khác nhau giao tiếp
+- JDBC JAR phải được mount vào đúng classpath của Spark executor
+
+### Data Engineering Patterns
+- **Grain**: luôn xác định rõ grain của DataFrame trước khi transform
+- **Pivot table**: chuyển long format → wide format cho customer-level analytics
+- **Window function**: `row_number().over(Window.partitionBy())` để lấy top-1 per group
+- **LLM as enrichment layer**: dùng LLM để label unstructured data (keyword → category)
+
+---
+
+## 9. Hướng dẫn chạy
+
+### Khởi động services
 
 ```bash
-cd infra/spark
-docker compose up -d
+# Spark cluster
+docker compose -f infra/spark/docker-compose.yaml up -d
+
+# MySQL
+docker compose -f infra/mysql/docker-compose.yaml up -d
+
+# Metabase (optional)
+docker compose -f infra/metabase/docker-compose.yaml up -d
 ```
 
-### 2. Run Pipeline 1 – log_content ETL
+### Chạy Pipeline 1 – log_content
 
 ```bash
-docker exec spark-master spark-submit \
+docker exec spark-master /opt/spark/bin/spark-submit \
+  --master spark://spark-master:7077 \
+  --jars /opt/spark/jars_external/mysql-connector-j-8.4.0.jar \
   /code/pipelines/log_content/etl_30_days.py
 ```
 
-### 3. Run Pipeline 2a – log_search ETL
+### Chạy Pipeline 2 – log_search
 
 ```bash
-docker exec spark-master spark-submit \
+# Bước 1: ETL log search
+docker exec spark-master /opt/spark/bin/spark-submit \
   /code/pipelines/log_search/etl_log_search.py
-```
 
-### 4. Run LLM Enrichment (local Python)
-
-```bash
+# Bước 2: LLM enrichment (local, cần .env với OPENAI_API_KEY)
 source .venv/bin/activate
 python pipelines/log_search/enrich_v1.py
-```
 
-### 5. Run Spark category standardization
-
-```bash
-docker exec spark-master spark-submit \
+# Bước 3: Spark category mapping
+docker exec spark-master /opt/spark/bin/spark-submit \
   /code/pipelines/log_search/mapping.py
+
+# Bước 4: Post enrich + load MySQL
+docker exec spark-master /opt/spark/bin/spark-submit \
+  --jars /opt/spark/jars_external/mysql-connector-j-8.4.0.jar \
+  /code/pipelines/log_search/post_enrich.py
 ```
 
-### 6. Run post-enrich & load to MySQL
+### DuckDB ad-hoc query
 
 ```bash
-docker exec spark-master spark-submit \
-  /code/pipelines/log_search/post_enrich.py
+duckdb ~/Bigdata/DuckDB/db/mydatabase.duckdb -ui
 ```
 
 ---
 
-## Author
-
-Self-learning Big Data project – running entirely on personal hardware.
+*Project đang trong giai đoạn học tập và phát triển liên tục.*

@@ -2,24 +2,21 @@
 
 > **Mục tiêu:** Xây dựng end-to-end Big Data pipeline xử lý log xem nội dung và log tìm kiếm của một hệ thống truyền hình OTT, chạy hoàn toàn trên máy cá nhân (không dùng cloud).
 
----
 
 ## Mục lục
 
 1. [Tổng quan](#1-tổng-quan)
-2. 
-2. [Kiến trúc hệ thống (UML)](#2-kiến-trúc-hệ-thống-uml)
-3. [Tech Stack](#3-tech-stack)
-4. [Pipeline chi tiết](#4-pipeline-chi-tiết)
+2. [Key Learnings](#2-key-learnings)
+3. [Kiến trúc hệ thống (UML)](#3-kiến-trúc-hệ-thống-uml)
+4. [Tech Stack](#4-tech-stack)
+5. [Pipeline chi tiết](#5-pipeline-chi-tiết)
    - [Pipeline 1 – log_content ETL](#pipeline-1--log_content-etl)
    - [Pipeline 2 – log_search ETL + LLM Enrichment](#pipeline-2--log_search-etl--llm-enrichment)
-5. [Cấu trúc thư mục](#5-cấu-trúc-thư-mục)
-6. [Đã làm được](#6-đã-làm-được)
-7. [GCP Migration](#7-gcp-migration)
-8. [Key Learnings](#8-key-learnings)
+6. [Cấu trúc thư mục](#6-cấu-trúc-thư-mục)
+7. [Đã làm được](#7-đã-làm-được)
+8. [Kế hoạch tương lai](#8-kế-hoạch-tương-lai)
 9. [Hướng dẫn chạy](#9-hướng-dẫn-chạy)
 
----
 
 ## 1. Tổng quan
 
@@ -56,8 +53,6 @@ Từ raw log, hệ thống tổng hợp ra **customer profile 30 ngày**: mỗi 
 - **Pivot table**: chuyển long format → wide format cho customer-level analytics
 - **Window function**: `row_number().over(Window.partitionBy())` để lấy top-1 per group
 - **LLM as enrichment layer**: dùng LLM để label unstructured data (keyword → category)
-
----
 
 ## 3. Kiến trúc hệ thống (UML)
 
@@ -100,7 +95,6 @@ flowchart TB
     E4 --> M2
 ```
 
----
 
 ## 4. Tech Stack
 
@@ -113,7 +107,7 @@ flowchart TB
 | **Prototyping** | Jupyter Notebook, DuckDB | EDA, light-weight transform |
 | **Infrastructure** | Docker, Docker Compose | Orchestrate all services |
 
----
+
 
 ## 5. Pipeline chi tiết
 
@@ -125,15 +119,15 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    A["raw JSON\n(daily)"] --> B["flatten _source.*"]
+    A["raw JSON<br/>(daily)"] --> B["flatten _source.*"]
     B --> C["map AppName to Type<br/>5 categories"]
-    C --> D["filter invalid\nContract"]
-    D --> E["pivot\n1 row/Contract/day"]
+    C --> D["filter invalid<br/>Contract"]
+    D --> E["pivot<br/>1 row/Contract/day"]
     E --> F["union 30 days"]
-    F --> G["find_active\ndistinct dates"]
-    G --> H["most_watch\ngreatest duration"]
-    H --> I["customer_taste\ntypes used"]
-    I --> J[("MySQL\ncustomer_content_stats")]
+    F --> G["find_active<br/>distinct dates"]
+    G --> H["most_watch<br/>greatest duration"]
+    H --> I["customer_taste<br/>types used"]
+    I --> J[("MySQL<br/>customer_content_stats")]
 ```
 
 **Schema output (1 row / Contract):**
@@ -182,8 +176,6 @@ flowchart TD
 - **Checkpoint/resume**: skip keyword đã classified, tránh gọi API lại khi restart
 - **Prompt Engineering**: rule-based prompt tiếng Việt, 13 categories, ưu tiên suy luận trước khi fallback `Other`
 
----
-
 ## 6. Cấu trúc thư mục
 
 ```
@@ -203,7 +195,7 @@ Bigdata/
 │   ├── log_search_v1.ipynb         ← log search EDA
 │   └── enrich.ipynb                ← LLM enrichment test
 │
-├── warehouse/queries/              ← SQL analysis queries
+├── queries/              
 │
 ├── infra/
 │   ├── spark/
@@ -223,7 +215,6 @@ Bigdata/
 └── README.md
 ```
 
----
 
 ## 7. Đã làm được
 
@@ -255,7 +246,14 @@ Bigdata/
 - [x] Viết README đầy đủ với Mermaid diagrams
 
 
-## 8. GCP Migration (planned)
+## 8. Kế hoạch tương lai
+
+### BI Dashboard
+
+> **Mục tiêu:** Xây dựng BI dashboard để trực quan hóa dữ liệu từ MySQL. Các tools đang suy nghĩ đến là metabase, hoặc PowerBI truyền thống. 
+
+
+### GCP Migration
 
 > **Mục tiêu:** Chuyển toàn bộ pipeline lên GCP — giữ nguyên logic ETL, không cần viết lại code, chỉ đổi config và output target.
 
@@ -267,7 +265,6 @@ Bigdata/
 | Metabase | **Looker Studio** (free, connect thẳng BigQuery) |
 | Chạy thủ công | **Cloud Composer** (Airflow managed) |
 
----
 
 ## 9. Hướng dẫn chạy
 

@@ -28,10 +28,13 @@ Xem hướng dẫn thực thi local tại [README.md](local/README.md)
 
 #### Giai đoạn 2: Kho dữ liệu & Xử lý (BigQuery)
 
-*   [ ] **Tạo Dataset:** Tạo dataset `ott_analysis` tại Singapore.
-*   [ ] **Định nghĩa Schema:** Tạo bảng bằng tính năng "Auto-detect schema" khi load file từ GCS.
-*   [ ] **Load Data:** Thiết lập job load dữ liệu (qua `bq load` hoặc giao diện console).
-*   [ ] **SQL Transformation:** Chuyển đổi logic từ PySpark sang SQL (View/Table) trực tiếp trong BigQuery.
+*   [x] **Tạo schema, table:** Tạo schema cho BigQuery và tạo table từ schema.
+
+*   [x] **Chỉnh sửa Pipeline:** refactor ETL_log_search.py và ETL_30_days.py thành [ETL-30-days.sql](cloud/queries/log_content/ETL-30-days.sql) và [ETL-log-search.sql](cloud/queries/log_search/ETL-log-search.sql).
+
+*   [x] **Chỉnh sửa Pipeline (pt.2):** Chuyển đổi logic lại của 3 file [mapping.py](local/pipelines/log_search/mapping.py), [enrich_v1.py](local/pipelines/log_search/enrich_v1.py) và [post_enrich.py](local/pipelines/log_search/post_enrich.py) thành SQL scripts.
+
+> Đã hoàn thành
 
 #### Giai đoạn 3: Trực quan hóa (Looker Studio)
 *   [ ] **Kết nối nguồn dữ liệu:** Kết nối Looker Studio với BigQuery.
@@ -47,11 +50,18 @@ Xem hướng dẫn thực thi local tại [README.md](local/README.md)
 ```mermaid
 graph LR
     subgraph "Google Cloud Platform <br/>(MVP)"
-        A[(Cloud Storage<br/>Raw Data Zone)]
-        B[(BigQuery<br/>Data Warehouse)]
-        C[Looker Studio<br/>Dashboards]
+        A[(Cloud Storage)]
+        subgraph "BigQuery"
+            B["compute"]
+            C["external table"]
+        end
+        D[(Looker Studio)]
     end
 
+    subgraph "BigQuery"
+
+    end
     A -->|Upload file JSON/Parquet| B
-    B -->|Load Data / External Table| C
+    B -->|computed| C
+    C -->|Load Data| D
 ```

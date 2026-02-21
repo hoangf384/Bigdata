@@ -1,0 +1,264 @@
+{
+  "configuration": {
+    "jobType": "QUERY",
+    "query": {
+      "destinationTable": {
+        "datasetId": "bigdata",
+        "projectId": "project-f5ad855c-9811-45c4-a42",
+        "tableId": "mapping_std"
+      },
+      "priority": "INTERACTIVE",
+      "query": "CREATE OR REPLACE TABLE `bigdata.mapping_std` AS\nSELECT\n  keyword,\n  CASE\n    WHEN category_std IN ('Action') THEN 'Action'\n    WHEN category_std IN ('Romance') THEN 'Romance'\n    WHEN category_std IN ('Comedy') THEN 'Comedy'\n    WHEN category_std IN ('Horror') THEN 'Horror'\n    WHEN category_std IN ('Animation', '.Animation', 'Animation/Drama') THEN 'Animation'\n    WHEN category_std IN ('Drama', 'Drama/Other') THEN 'Drama'\n    WHEN category_std IN ('C Drama') THEN 'C Drama'\n    WHEN category_std IN ('K Drama', 'KDrama') THEN 'K Drama'\n    WHEN category_std IN ('Sports', 'Sport', 'Live Sports', 'Sports/Drama') THEN 'Sports'\n    WHEN category_std IN ('Music', 'Music/Drama') THEN 'Music'\n    WHEN category_std IN ('Reality Show', 'Reality', 'Dance/Reality', 'Cooking/Reality') THEN 'Reality Show'\n    WHEN category_std IN ('TV Channel', 'Live') THEN 'TV Channel'\n    WHEN category_std IN ('News') THEN 'News'\n    ELSE 'Other'\n  END AS category_std\nFROM `bigdata.raw_mapping`;\n",
+      "useLegacySql": false
+    }
+  },
+  "etag": "zQhUpjcyqUi6MRZ+BRaTgQ==",
+  "id": "project-f5ad855c-9811-45c4-a42:asia-southeast1.bquxjob_19364c19_19c8045fd8e",
+  "jobCreationReason": {
+    "code": "REQUESTED"
+  },
+  "jobReference": {
+    "jobId": "bquxjob_19364c19_19c8045fd8e",
+    "location": "asia-southeast1",
+    "projectId": "project-f5ad855c-9811-45c4-a42"
+  },
+  "kind": "bigquery#job",
+  "principal_subject": "user:phuchoang0308@gmail.com",
+  "selfLink": "https://bigquery.googleapis.com/bigquery/v2/projects/project-f5ad855c-9811-45c4-a42/jobs/bquxjob_19364c19_19c8045fd8e?location=asia-southeast1",
+  "statistics": {
+    "creationTime": "1771678596904",
+    "endTime": "1771678599837",
+    "finalExecutionDurationMs": "1552",
+    "query": {
+      "billingTier": 1,
+      "cacheHit": false,
+      "ddlOperationPerformed": "REPLACE",
+      "ddlTargetTable": {
+        "datasetId": "bigdata",
+        "projectId": "project-f5ad855c-9811-45c4-a42",
+        "tableId": "mapping_std"
+      },
+      "estimatedBytesProcessed": "0",
+      "metadataCacheStatistics": {
+        "tableMetadataCacheUsage": [
+          {
+            "tableReference": {
+              "datasetId": "bigdata",
+              "projectId": "project-f5ad855c-9811-45c4-a42",
+              "tableId": "raw_mapping"
+            },
+            "tableType": "EXTERNAL",
+            "unusedReason": "METADATA_CACHING_NOT_ENABLED"
+          }
+        ]
+      },
+      "performanceInsights": {
+        "avgPreviousExecutionMs": "1771"
+      },
+      "queryPlan": [
+        {
+          "completedParallelInputs": "1",
+          "computeMode": "BIGQUERY",
+          "computeMsAvg": "561",
+          "computeMsMax": "561",
+          "computeRatioAvg": 1,
+          "computeRatioMax": 1,
+          "endMs": "1771678598065",
+          "id": "0",
+          "name": "S00: Input",
+          "parallelInputs": "1",
+          "readMsAvg": "309",
+          "readMsMax": "309",
+          "readRatioAvg": 0.5508021390374331,
+          "readRatioMax": 0.5508021390374331,
+          "recordsRead": "161371",
+          "recordsWritten": "161371",
+          "shuffleOutputBytes": "5465015",
+          "shuffleOutputBytesSpilled": "0",
+          "slotMs": "807",
+          "startMs": "1771678597443",
+          "status": "COMPLETE",
+          "steps": [
+            {
+              "kind": "READ",
+              "substeps": [
+                "$1:category_std, $2:keyword",
+                "FROM bigdata.raw_mapping"
+              ]
+            },
+            {
+              "kind": "COMPUTE",
+              "substeps": [
+                "$10 := case_no_value(in($1, 'Action'), 'Action', in($1, 'Romance'), 'Romance', in($1, 'Comedy'), 'Comedy', in($1, 'Horror'), 'Horror', ...)"
+              ]
+            },
+            {
+              "kind": "WRITE",
+              "substeps": [
+                "$2, $10",
+                "TO __stage00_output"
+              ]
+            }
+          ],
+          "waitMsAvg": "2",
+          "waitMsMax": "2",
+          "waitRatioAvg": 0.0035650623885918,
+          "waitRatioMax": 0.0035650623885918,
+          "writeMsAvg": "5",
+          "writeMsMax": "5",
+          "writeRatioAvg": 0.008912655971479501,
+          "writeRatioMax": 0.008912655971479501
+        },
+        {
+          "completedParallelInputs": "50",
+          "computeMode": "BIGQUERY",
+          "computeMsAvg": "10",
+          "computeMsMax": "18",
+          "computeRatioAvg": 0.017825311942959002,
+          "computeRatioMax": 0.03208556149732621,
+          "endMs": "1771678598120",
+          "id": "1",
+          "inputStages": [
+            "0"
+          ],
+          "name": "S01: Coalesce",
+          "parallelInputs": "50",
+          "readMsAvg": "0",
+          "readMsMax": "0",
+          "readRatioAvg": 0,
+          "readRatioMax": 0,
+          "recordsRead": "161371",
+          "recordsWritten": "161371",
+          "shuffleOutputBytes": "5465015",
+          "shuffleOutputBytesSpilled": "0",
+          "slotMs": "1771",
+          "startMs": "1771678598074",
+          "status": "COMPLETE",
+          "steps": [
+            {
+              "kind": "READ",
+              "substeps": [
+                "FROM __stage00_output"
+              ]
+            }
+          ],
+          "waitMsAvg": "1",
+          "waitMsMax": "3",
+          "waitRatioAvg": 0.0017825311942959,
+          "waitRatioMax": 0.0053475935828877,
+          "writeMsAvg": "12",
+          "writeMsMax": "27",
+          "writeRatioAvg": 0.0213903743315508,
+          "writeRatioMax": 0.0481283422459893
+        },
+        {
+          "completedParallelInputs": "1",
+          "computeMode": "BIGQUERY",
+          "computeMsAvg": "456",
+          "computeMsMax": "456",
+          "computeRatioAvg": 0.8128342245989305,
+          "computeRatioMax": 0.8128342245989305,
+          "endMs": "1771678598605",
+          "id": "2",
+          "inputStages": [
+            "1"
+          ],
+          "name": "S02: Output",
+          "parallelInputs": "1",
+          "readMsAvg": "0",
+          "readMsMax": "0",
+          "readRatioAvg": 0,
+          "readRatioMax": 0,
+          "recordsRead": "161371",
+          "recordsWritten": "161371",
+          "shuffleOutputBytes": "0",
+          "shuffleOutputBytesSpilled": "0",
+          "slotMs": "889",
+          "startMs": "1771678598277",
+          "status": "COMPLETE",
+          "steps": [
+            {
+              "kind": "READ",
+              "substeps": [
+                "$2, $10",
+                "FROM __stage01_output"
+              ]
+            },
+            {
+              "kind": "EXPORT",
+              "substeps": [
+                "$2:keyword, $10:category_std",
+                "TO bigdata.mapping_std"
+              ]
+            },
+            {
+              "kind": "WRITE",
+              "substeps": [
+                "$2, $10",
+                "TO __stage02_output"
+              ]
+            }
+          ],
+          "waitMsAvg": "204",
+          "waitMsMax": "204",
+          "waitRatioAvg": 0.36363636363636365,
+          "waitRatioMax": 0.36363636363636365,
+          "writeMsAvg": "145",
+          "writeMsMax": "145",
+          "writeRatioAvg": 0.25846702317290554,
+          "writeRatioMax": 0.25846702317290554
+        }
+      ],
+      "referencedTables": [
+        {
+          "datasetId": "bigdata",
+          "projectId": "project-f5ad855c-9811-45c4-a42",
+          "tableId": "raw_mapping"
+        }
+      ],
+      "schema": {
+        "fields": [
+          {
+            "name": "keyword",
+            "type": "STRING"
+          },
+          {
+            "name": "category_std",
+            "type": "STRING"
+          }
+        ]
+      },
+      "statementType": "CREATE_TABLE_AS_SELECT",
+      "timeline": [
+        {
+          "activeUnits": "1",
+          "completedUnits": "0",
+          "elapsedMs": "830",
+          "estimatedRunnableUnits": "0",
+          "pendingUnits": "1",
+          "totalSlotMs": "3468"
+        },
+        {
+          "activeUnits": "0",
+          "completedUnits": "52",
+          "elapsedMs": "1830",
+          "estimatedRunnableUnits": "0",
+          "pendingUnits": "0",
+          "totalSlotMs": "3468"
+        }
+      ],
+      "totalBytesBilled": "10485760",
+      "totalBytesProcessed": "9338499",
+      "totalPartitionsProcessed": "0",
+      "totalSlotMs": "3468",
+      "transferredBytes": "0"
+    },
+    "startTime": "1771678597170",
+    "totalBytesProcessed": "9338499",
+    "totalSlotMs": "3468"
+  },
+  "status": {
+    "state": "DONE"
+  },
+  "user_email": "phuchoang0308@gmail.com"
+}

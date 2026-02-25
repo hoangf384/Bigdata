@@ -4,7 +4,7 @@ Xem hướng dẫn thực thi local tại [README.md](local/README.md)
 
 ---
 
-## Lộ trình Chuyển đổi GCP MVP (Serverless)
+## Lộ trình Chuyển đổi GCP
 
 
 ### 1. Kiến trúc chuyển đổi Tech Stack sang GCP
@@ -15,6 +15,14 @@ Xem hướng dẫn thực thi local tại [README.md](local/README.md)
 | **Serving Layer** | MySQL (Docker) | **BigQuery** |
 | **Visualization (BI)** | Metabase (Local) | **Looker Studio** |
 | **Orchestration** | Manual / Scripts | **BigQuery Jobs / Scheduled Queries** |
+
+## thay đổi kiến trúc tại local (ý định)
+| Thành phần |  |  |
+| :--- | :--- | :--- |
+| **Storage (Data Lake)** | Local Disk | **MySQL/PostgreSQL on Docker** |
+| **Data Warehouse & Processing** | Spark on Docker | **DuckDB on .venv** |
+| **Serving Layer** | MySQL on Docker | **DuckDB on .venv** |
+| **Visualization (BI)** | - | - |
 
 ---
 

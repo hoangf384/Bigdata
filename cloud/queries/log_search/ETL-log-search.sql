@@ -25,6 +25,6 @@ keyword_counts AS (
 SELECT
   month_date,
   user_id,
-  keyword AS mostWatch
+  keyword AS mostSearch
 FROM keyword_counts
 QUALIFY ROW_NUMBER() OVER(PARTITION BY DATE_TRUNC(month_date, MONTH), user_id ORDER BY search_count DESC) = 1;

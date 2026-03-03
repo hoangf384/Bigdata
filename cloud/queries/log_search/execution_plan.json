@@ -8,31 +8,31 @@
         "tableId": "customer_search_stats"
       },
       "priority": "INTERACTIVE",
-      "query": "CREATE OR REPLACE TABLE `bigdata.customer_search_stats`\nPARTITION BY DATE_TRUNC(month_date, MONTH) \nAS \n\nWITH raw_data AS (\n  SELECT\n    user_id,\n    keyword,\n    PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_FILE_NAME, r'(\\d{8})')) AS month_date\n  FROM `bigdata.log_search`\n  WHERE user_id IS NOT NULL \n    AND keyword IS NOT NULL\n),\n\nkeyword_counts AS (\n  SELECT\n    month_date,\n    user_id,\n    keyword,\n    COUNT(*) AS search_count\n  FROM raw_data\n  GROUP BY month_date, user_id, keyword\n)\n\nSELECT\n  month_date,\n  user_id,\n  keyword AS mostWatch\nFROM keyword_counts\nQUALIFY ROW_NUMBER() OVER(PARTITION BY DATE_TRUNC(month_date, MONTH), user_id ORDER BY search_count DESC) = 1;",
+      "query": "CREATE OR REPLACE TABLE `bigdata.customer_search_stats`\nPARTITION BY DATE_TRUNC(month_date, MONTH) \nAS \n\nWITH raw_data AS (\n  SELECT\n    user_id,\n    keyword,\n    PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_FILE_NAME, r'(\\d{8})')) AS month_date\n  FROM `bigdata.log_search`\n  WHERE user_id IS NOT NULL \n    AND keyword IS NOT NULL\n),\n\nkeyword_counts AS (\n  SELECT\n    month_date,\n    user_id,\n    keyword,\n    COUNT(*) AS search_count\n  FROM raw_data\n  GROUP BY month_date, user_id, keyword\n)\n\nSELECT\n  month_date,\n  user_id,\n  keyword AS mostSearch\nFROM keyword_counts\nQUALIFY ROW_NUMBER() OVER(PARTITION BY DATE_TRUNC(month_date, MONTH), user_id ORDER BY search_count DESC) = 1;",
       "useLegacySql": false
     }
   },
-  "etag": "ZXoIuZbkhxOjxW18SUHa4g==",
-  "id": "project-f5ad855c-9811-45c4-a42:asia-southeast1.bquxjob_60b33de3_19c7f6277ee",
+  "etag": "F1jvqvPdhyQwOOnIEUUsRg==",
+  "id": "project-f5ad855c-9811-45c4-a42:asia-southeast1.bquxjob_2e5a7d39_19cb2bfce4d",
   "jobCreationReason": {
     "code": "REQUESTED"
   },
   "jobReference": {
-    "jobId": "bquxjob_60b33de3_19c7f6277ee",
+    "jobId": "bquxjob_2e5a7d39_19cb2bfce4d",
     "location": "asia-southeast1",
     "projectId": "project-f5ad855c-9811-45c4-a42"
   },
   "kind": "bigquery#job",
   "principal_subject": "user:phuchoang0308@gmail.com",
-  "selfLink": "https://bigquery.googleapis.com/bigquery/v2/projects/project-f5ad855c-9811-45c4-a42/jobs/bquxjob_60b33de3_19c7f6277ee?location=asia-southeast1",
+  "selfLink": "https://bigquery.googleapis.com/bigquery/v2/projects/project-f5ad855c-9811-45c4-a42/jobs/bquxjob_2e5a7d39_19cb2bfce4d?location=asia-southeast1",
   "statistics": {
-    "creationTime": "1771663686115",
-    "endTime": "1771663690114",
-    "finalExecutionDurationMs": "2749",
+    "creationTime": "1772525441145",
+    "endTime": "1772525451505",
+    "finalExecutionDurationMs": "8539",
     "query": {
       "billingTier": 1,
       "cacheHit": false,
-      "ddlOperationPerformed": "CREATE",
+      "ddlOperationPerformed": "REPLACE",
       "ddlTargetTable": {
         "datasetId": "bigdata",
         "projectId": "project-f5ad855c-9811-45c4-a42",
@@ -56,24 +56,24 @@
         {
           "completedParallelInputs": "73",
           "computeMode": "BIGQUERY",
-          "computeMsAvg": "97",
-          "computeMsMax": "389",
-          "computeRatioAvg": 0.05455568053993251,
-          "computeRatioMax": 0.218785151856018,
-          "endMs": "1771663686857",
+          "computeMsAvg": "83",
+          "computeMsMax": "323",
+          "computeRatioAvg": 0.051745635910224436,
+          "computeRatioMax": 0.2013715710723192,
+          "endMs": "1772525442105",
           "id": "0",
           "name": "S00: Input",
           "parallelInputs": "73",
-          "readMsAvg": "114",
-          "readMsMax": "234",
-          "readRatioAvg": 0.06411698537682789,
-          "readRatioMax": 0.13160854893138357,
+          "readMsAvg": "135",
+          "readMsMax": "249",
+          "readRatioAvg": 0.08416458852867831,
+          "readRatioMax": 0.1552369077306733,
           "recordsRead": "2366972",
           "recordsWritten": "1412229",
           "shuffleOutputBytes": "73151746",
           "shuffleOutputBytesSpilled": "0",
-          "slotMs": "20528",
-          "startMs": "1771663686480",
+          "slotMs": "16674",
+          "startMs": "1772525441709",
           "status": "COMPLETE",
           "steps": [
             {
@@ -106,23 +106,23 @@
               ]
             }
           ],
-          "waitMsAvg": "3",
-          "waitMsMax": "13",
-          "waitRatioAvg": 0.001687289088863892,
-          "waitRatioMax": 0.007311586051743532,
-          "writeMsAvg": "7",
-          "writeMsMax": "31",
-          "writeRatioAvg": 0.003937007874015748,
-          "writeRatioMax": 0.017435320584926885
+          "waitMsAvg": "2",
+          "waitMsMax": "7",
+          "waitRatioAvg": 0.0012468827930174563,
+          "waitRatioMax": 0.004364089775561097,
+          "writeMsAvg": "6",
+          "writeMsMax": "81",
+          "writeRatioAvg": 0.003740648379052369,
+          "writeRatioMax": 0.05049875311720698
         },
         {
           "completedParallelInputs": "7",
           "computeMode": "BIGQUERY",
-          "computeMsAvg": "442",
-          "computeMsMax": "578",
-          "computeRatioAvg": 0.24859392575928008,
-          "computeRatioMax": 0.3250843644544432,
-          "endMs": "1771663687210",
+          "computeMsAvg": "361",
+          "computeMsMax": "446",
+          "computeRatioAvg": 0.22506234413965087,
+          "computeRatioMax": 0.27805486284289277,
+          "endMs": "1772525442459",
           "id": "1",
           "inputStages": [
             "0"
@@ -137,8 +137,8 @@
           "recordsWritten": "1406104",
           "shuffleOutputBytes": "79880335",
           "shuffleOutputBytesSpilled": "0",
-          "slotMs": "4077",
-          "startMs": "1771663686866",
+          "slotMs": "3055",
+          "startMs": "1772525442117",
           "status": "COMPLETE",
           "steps": [
             {
@@ -170,22 +170,22 @@
             }
           ],
           "waitMsAvg": "1",
-          "waitMsMax": "2",
-          "waitRatioAvg": 0.0005624296962879641,
-          "waitRatioMax": 0.0011248593925759281,
-          "writeMsAvg": "27",
-          "writeMsMax": "52",
-          "writeRatioAvg": 0.015185601799775027,
-          "writeRatioMax": 0.02924634420697413
+          "waitMsMax": "1",
+          "waitRatioAvg": 0.0006234413965087282,
+          "waitRatioMax": 0.0006234413965087282,
+          "writeMsAvg": "15",
+          "writeMsMax": "25",
+          "writeRatioAvg": 0.009351620947630923,
+          "writeRatioMax": 0.015586034912718205
         },
         {
           "completedParallelInputs": "101",
           "computeMode": "BIGQUERY",
-          "computeMsAvg": "34",
-          "computeMsMax": "53",
-          "computeRatioAvg": 0.019122609673790775,
-          "computeRatioMax": 0.029808773903262094,
-          "endMs": "1771663687295",
+          "computeMsAvg": "33",
+          "computeMsMax": "62",
+          "computeRatioAvg": 0.02057356608478803,
+          "computeRatioMax": 0.03865336658354115,
+          "endMs": "1772525442547",
           "id": "2",
           "inputStages": [
             "1"
@@ -198,10 +198,10 @@
           "readRatioMax": 0,
           "recordsRead": "1406104",
           "recordsWritten": "667771",
-          "shuffleOutputBytes": "32653224",
+          "shuffleOutputBytes": "32654798",
           "shuffleOutputBytesSpilled": "0",
-          "slotMs": "6774",
-          "startMs": "1771663687223",
+          "slotMs": "6344",
+          "startMs": "1772525442470",
           "status": "COMPLETE",
           "steps": [
             {
@@ -269,23 +269,23 @@
               ]
             }
           ],
-          "waitMsAvg": "2",
-          "waitMsMax": "7",
-          "waitRatioAvg": 0.0011248593925759281,
-          "waitRatioMax": 0.003937007874015748,
-          "writeMsAvg": "15",
-          "writeMsMax": "31",
-          "writeRatioAvg": 0.00843644544431946,
-          "writeRatioMax": 0.017435320584926885
+          "waitMsAvg": "1",
+          "waitMsMax": "2",
+          "waitRatioAvg": 0.0006234413965087282,
+          "waitRatioMax": 0.0012468827930174563,
+          "writeMsAvg": "16",
+          "writeMsMax": "30",
+          "writeRatioAvg": 0.00997506234413965,
+          "writeRatioMax": 0.018703241895261846
         },
         {
           "completedParallelInputs": "2",
           "computeMode": "BIGQUERY",
-          "computeMsAvg": "1630",
-          "computeMsMax": "1778",
-          "computeRatioAvg": 0.9167604049493814,
+          "computeMsAvg": "1414",
+          "computeMsMax": "1604",
+          "computeRatioAvg": 0.8815461346633416,
           "computeRatioMax": 1,
-          "endMs": "1771663688823",
+          "endMs": "1772525444330",
           "id": "3",
           "inputStages": [
             "2"
@@ -300,8 +300,8 @@
           "recordsWritten": "667771",
           "shuffleOutputBytes": "0",
           "shuffleOutputBytesSpilled": "0",
-          "slotMs": "4701",
-          "startMs": "1771663687593",
+          "slotMs": "4516",
+          "startMs": "1772525442905",
           "status": "COMPLETE",
           "steps": [
             {
@@ -314,7 +314,7 @@
             {
               "kind": "EXPORT",
               "substeps": [
-                "$33:month_date, $30:user_id, $31:mostWatch",
+                "$33:month_date, $30:user_id, $31:mostSearch",
                 "TO bigdata.customer_search_stats"
               ]
             },
@@ -326,14 +326,14 @@
               ]
             }
           ],
-          "waitMsAvg": "290",
-          "waitMsMax": "291",
-          "waitRatioAvg": 0.16310461192350956,
-          "waitRatioMax": 0.16366704161979753,
-          "writeMsAvg": "272",
-          "writeMsMax": "295",
-          "writeRatioAvg": 0.1529808773903262,
-          "writeRatioMax": 0.16591676040494938
+          "waitMsAvg": "349",
+          "waitMsMax": "349",
+          "waitRatioAvg": 0.21758104738154613,
+          "waitRatioMax": 0.21758104738154613,
+          "writeMsAvg": "526",
+          "writeMsMax": "578",
+          "writeRatioAvg": 0.327930174563591,
+          "writeRatioMax": 0.36034912718204487
         }
       ],
       "referencedTables": [
@@ -354,7 +354,7 @@
             "type": "STRING"
           },
           {
-            "name": "mostWatch",
+            "name": "mostSearch",
             "type": "STRING"
           }
         ]
@@ -362,39 +362,86 @@
       "statementType": "CREATE_TABLE_AS_SELECT",
       "timeline": [
         {
-          "activeUnits": "7",
-          "completedUnits": "73",
-          "elapsedMs": "688",
+          "activeUnits": "28",
+          "completedUnits": "45",
+          "elapsedMs": "499",
           "estimatedRunnableUnits": "0",
-          "pendingUnits": "7",
-          "totalSlotMs": "36081"
+          "pendingUnits": "28",
+          "totalSlotMs": "30591"
         },
         {
           "activeUnits": "2",
           "completedUnits": "181",
-          "elapsedMs": "1688",
+          "elapsedMs": "1499",
           "estimatedRunnableUnits": "0",
           "pendingUnits": "2",
-          "totalSlotMs": "36081"
+          "totalSlotMs": "30591"
+        },
+        {
+          "activeUnits": "2",
+          "completedUnits": "181",
+          "elapsedMs": "2499",
+          "estimatedRunnableUnits": "6",
+          "pendingUnits": "2",
+          "totalSlotMs": "30591"
         },
         {
           "activeUnits": "0",
           "completedUnits": "183",
-          "elapsedMs": "2688",
+          "elapsedMs": "3499",
+          "pendingUnits": "0",
+          "totalSlotMs": "30591"
+        },
+        {
+          "activeUnits": "0",
+          "completedUnits": "183",
+          "elapsedMs": "4499",
           "estimatedRunnableUnits": "0",
           "pendingUnits": "0",
-          "totalSlotMs": "36081"
+          "totalSlotMs": "30591"
+        },
+        {
+          "activeUnits": "0",
+          "completedUnits": "183",
+          "elapsedMs": "5499",
+          "estimatedRunnableUnits": "0",
+          "pendingUnits": "0",
+          "totalSlotMs": "30591"
+        },
+        {
+          "activeUnits": "0",
+          "completedUnits": "183",
+          "elapsedMs": "6499",
+          "estimatedRunnableUnits": "0",
+          "pendingUnits": "0",
+          "totalSlotMs": "30591"
+        },
+        {
+          "activeUnits": "0",
+          "completedUnits": "183",
+          "elapsedMs": "7499",
+          "estimatedRunnableUnits": "0",
+          "pendingUnits": "0",
+          "totalSlotMs": "30591"
+        },
+        {
+          "activeUnits": "0",
+          "completedUnits": "183",
+          "elapsedMs": "8499",
+          "estimatedRunnableUnits": "0",
+          "pendingUnits": "0",
+          "totalSlotMs": "30591"
         }
       ],
       "totalBytesBilled": "66060288",
       "totalBytesProcessed": "65326649",
       "totalPartitionsProcessed": "0",
-      "totalSlotMs": "36081",
+      "totalSlotMs": "30591",
       "transferredBytes": "0"
     },
-    "startTime": "1771663686312",
+    "startTime": "1772525441501",
     "totalBytesProcessed": "65326649",
-    "totalSlotMs": "36081"
+    "totalSlotMs": "30591"
   },
   "status": {
     "state": "DONE"

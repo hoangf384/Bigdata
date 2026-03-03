@@ -12,7 +12,7 @@ OPTIONS (
    uris = ['gs://bigdata-proj/raw/log_search/*.parquet']
 );
 
-CREATE OR REPLACE EXTERNAL TABLE `bigdata.raw_mapping`
+CREATE OR REPLACE EXTERNAL TABLE bigdata.raw_mapping
 OPTIONS (
   format = 'NEWLINE_DELIMITED_JSON',
   uris = ['gs://bigdata-proj/raw/mapping/mapping.json']

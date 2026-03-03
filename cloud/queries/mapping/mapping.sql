@@ -17,4 +17,5 @@ SELECT
     WHEN category_std IN ('News') THEN 'News'
     ELSE 'Other'
   END AS category_std
-FROM `bigdata.raw_mapping`;
+FROM `bigdata.raw_mapping`
+QUALIFY ROW_NUMBER() OVER(PARTITION BY LOWER(TRIM(keyword)) ORDER BY category_std DESC) = 1;

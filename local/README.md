@@ -272,13 +272,13 @@ Bigdata/
 
 ```bash
 # Spark cluster
-docker compose -f infra/spark/docker-compose.yaml up -d
+docker compose -f local/infra/spark/docker-compose.yaml up -d
 
 # MySQL
-docker compose -f infra/mysql/docker-compose.yaml up -d
+docker compose -f local/infra/mysql/docker-compose.yaml up -d
 
 # Metabase (optional)
-docker compose -f infra/metabase/docker-compose.yaml up -d
+docker compose -f Local/infra/metabase/docker-compose.yaml up -d
 ```
 
 ### Chạy Pipeline 1 – log_content

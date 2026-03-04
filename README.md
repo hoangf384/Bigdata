@@ -42,11 +42,15 @@ Xem hướng dẫn thực thi local tại [README.md](local/README.md)
 
 *   [x] **Chỉnh sửa Pipeline (pt.2):** Chuyển đổi logic lại của 3 file [mapping.py](local/pipelines/log_search/mapping.py), [enrich_v1.py](local/pipelines/log_search/enrich_v1.py) và [post_enrich.py](local/pipelines/log_search/post_enrich.py) thành SQL scripts.
 
-> Đã hoàn thành
+*   [ ] **(NEW) Chỉnh sửa Pipeline (pt.3):** Tạo bảng dimension `dim_user_mapping` từ `customer_content_taste` và `customer_taste_final`.
+
+> `dim_user_mapping` có cấu trúc như sau:
+
+user_id (PK) | Contract (FK) | created_date | status (Active/Inactive)
 
 #### Giai đoạn 3: Trực quan hóa (Looker Studio)
-*   [ ] **Kết nối nguồn dữ liệu:** Kết nối Looker Studio với BigQuery.
-*   [ ] **Chọn bảng:** Trỏ tới đúng Project -> Dataset -> Table/View.
+*   [x] **Kết nối nguồn dữ liệu:** Kết nối Looker Studio với BigQuery.
+*   [x] **Chọn bảng:** Trỏ tới đúng Project -> Dataset -> Table/View.
 *   [ ] **Thiết kế Dashboard:** Kéo thả các biểu đồ phân tích thời lượng, hành vi người dùng.
 
 #### Giai đoạn 4: Quản lý chi phí & Tự động hóa

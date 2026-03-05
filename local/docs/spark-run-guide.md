@@ -19,7 +19,7 @@ Monitoring UI: [http://localhost:18080](http://localhost:18080)
 docker exec spark-master /opt/spark/bin/spark-submit \
   --master spark://spark-master:7077 \
   --deploy-mode client \
-  /code/pipelines/log_content/etl_30_days.py
+  /pipelines/log_content/etl_30_days.py
 ```
 
 ---
@@ -30,7 +30,7 @@ docker exec spark-master /opt/spark/bin/spark-submit \
 docker exec spark-master /opt/spark/bin/spark-submit \
   --master spark://spark-master:7077 \
   --deploy-mode client \
-  /code/pipelines/log_search/etl_log_search.py
+  /pipelines/log_search/etl_log_search.py
 ```
 
 ---
@@ -64,5 +64,3 @@ docker exec spark-master /opt/spark/bin/spark-submit \
   --deploy-mode client \
   /code/pipelines/log_search/post_enrich.py
 ```
-
-

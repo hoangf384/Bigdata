@@ -30,3 +30,46 @@ models:
           - relationships:
               to: ref('dim_users')
               field: user_id
+
+  - name: fct_customer_content_stats
+    description: "Bảng Fact tổng hợp hành vi xem nội dung của khách hàng (theo logic từ etl_30_days.py)."
+    columns:
+      - name: contract
+        description: "Mã định danh khách hàng (hợp đồng)."
+        tests:
+          - unique
+          - not_null
+      - name: active_days
+        description: "Số ngày khách hàng có phát sinh log xem nội dung."
+      - name: most_watch
+        description: "Loại nội dung khách hàng xem nhiều nhất (theo tổng thời lượng)."
+      - name: taste
+        description: "Danh sách các loại nội dung khách hàng đã từng xem, nối bằng dấu '-'."
+      - name: duration_truyen_hinh
+        description: "Tổng thời lượng xem Truyền hình."
+      - name: duration_phim_truyen
+        description: "Tổng thời lượng xem Phim truyện."
+      - name: duration_the_thao
+        description: "Tổng thời lượng xem Thể thao."
+      - name: duration_thieu_nhi
+        description: "Tổng thời lượng xem Thiếu nhi."
+      - name: duration_giai_tri
+        description: "Tổng thời lượng xem Giải trí."
+
+  - name: fct_customer_search_taste
+    description: "Bảng phân tích sự thay đổi sở thích (taste) của khách hàng thông qua hành vi tìm kiếm (Search Logs) giữa các tháng."
+    columns:
+      - name: user_id
+        tests:
+          - not_null
+      - name: most_search_m6
+        description: "Từ khóa tìm kiếm nhiều nhất tháng 6."
+      - name: most_search_m7
+        description: "Từ khóa tìm kiếm nhiều nhất tháng 7."
+      - name: category_m6
+        description: "Danh mục chuẩn tương ứng tháng 6."
+      - name: category_m7
+        description: "Danh mục chuẩn tương ứng tháng 7."
+      - name: taste_status
+        description: "Trạng thái thay đổi: New, Churned, Unchanged, Changed."
+

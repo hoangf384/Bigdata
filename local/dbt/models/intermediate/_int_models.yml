@@ -68,3 +68,25 @@ models:
         description: "Tháng báo cáo (giá trị Integer: 4, 5, 6...)."
         tests:
           - not_null
+
+  - name: int_user_monthly_most_search
+    description: "Thống kê từ khóa được tìm kiếm nhiều nhất của mỗi người dùng theo từng tháng."
+    columns:
+      - name: user_id
+        tests:
+          - not_null
+      - name: report_month
+        tests:
+          - not_null
+      - name: most_search
+        description: "Từ khóa xuất hiện nhiều nhất trong tháng."
+
+  - name: int_standardized_mapping
+    description: "Bảng mapping từ khóa và danh mục đã được chuẩn hóa từ kết quả LLM."
+    columns:
+      - name: keyword
+        tests:
+          - unique
+          - not_null
+      - name: category_std
+        description: "Danh mục chuẩn sau khi ánh xạ."

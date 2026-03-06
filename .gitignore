@@ -1,9 +1,42 @@
+# IDE / Editor
 .idea/
-.venv/
 .vscode/
-.env
 
+# Virtual Environments
+.venv/
+
+# Environment Variables
+.env
+*.env
+!.env.template
+!.env.example
+
+# Data Directories
 **/Data*/
 **/data*/
 
+# Data & Database files
+*.duckdb
+*.db
+*.sqlite
+
+# Logs
 logs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# dbt
+target/
+.user.yml
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# OS generated files
+.DS_Store
+Thumbs.db

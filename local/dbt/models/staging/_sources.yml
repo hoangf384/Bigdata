@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: raw
+    database: myduckdb
+    schema: main
+    tables:
+      - name: log_content
+        description: "Raw JSON content viewing logs from users."
+      - name: log_search
+        description: "Raw Parquet search logs from users."
+      - name: contracts
+        description: "Raw Parquet contract and equipment definitions."
+        # This will need an identifier or path if it's dynamic

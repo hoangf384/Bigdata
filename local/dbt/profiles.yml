@@ -1,0 +1,9 @@
+flags:
+  send_anonymous_usage_stats: False
+
+ott_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ../duckdb/myduckdb.duckdb

@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: dim_users
+    description: "Bảng Dimensional (bảng chiều) định danh người dùng trên hệ thống OTT."
+    columns:
+      - name: user_id
+        description: "Khóa chính (PK), định danh duy nhất của mỗi người dùng."
+        tests:
+          - unique
+          - not_null
+      - name: created_date
+        description: "Thời gian người dùng tạo tài khoản lần đầu tiên."
+
+  - name: dim_contracts
+    description: "Bảng Dimensional lưu trữ thông tin hợp đồng và mã thiết bị thực tế."
+    columns:
+      - name: contract
+        description: "Mã hợp đồng, có thể đóng vai trò như khóa chính (PK)."
+        tests:
+          - unique
+          - not_null
+      - name: Mac
+        description: "Địa chỉ MAC của thiết bị."
+      - name: user_id
+        description: "Mã người dùng, là khóa ngoại (FK) tham chiếu tới bảng dim_users."
+        tests:
+          - not_null
+          # Ràng buộc khóa ngoại, yêu cầu user_id phải có trong bảng dim_users
+          - relationships:
+              to: ref('dim_users')
+              field: user_id

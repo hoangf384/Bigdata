@@ -1,5 +1,3 @@
-{{ config(materialized='table') }}
-
 WITH mapping_data AS (
     SELECT
         keyword,

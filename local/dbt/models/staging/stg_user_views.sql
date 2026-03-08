@@ -1,7 +1,5 @@
-{{ config(materialized='view') }}
-
 WITH april AS (
-    SELECT 
+    SELECT
         CAST(user_id AS VARCHAR) AS user_id,
         contentName AS content_name,
         screenName AS screen_name,
@@ -10,7 +8,7 @@ WITH april AS (
     FROM {{ ref('stg_april') }}
 ),
 may AS (
-    SELECT 
+    SELECT
         CAST(user_id AS VARCHAR) AS user_id,
         contentName AS content_name,
         screenName AS screen_name,
@@ -19,7 +17,7 @@ may AS (
     FROM {{ ref('stg_may') }}
 ),
 june AS (
-    SELECT 
+    SELECT
         CAST(user_id AS VARCHAR) AS user_id,
         contentName AS content_name,
         screenName AS screen_name,

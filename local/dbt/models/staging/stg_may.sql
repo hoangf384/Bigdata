@@ -1,4 +1,2 @@
-{{ config(materialized='view') }}
-
-SELECT * 
+SELECT *
 FROM {{ source('raw', 'thang5') }}

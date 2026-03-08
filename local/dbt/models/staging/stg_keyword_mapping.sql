@@ -1,6 +1,3 @@
-{{ config(materialized='view') }}
-
-
 SELECT
     keyword,
     category_std

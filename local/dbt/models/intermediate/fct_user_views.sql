@@ -1,5 +1,3 @@
-{{ config(materialized='table') }}
-
 SELECT *
 FROM {{ ref('stg_user_views') }}
 WHERE user_id IS NOT NULL

@@ -1,5 +1,3 @@
-{{ config(materialized='table') }}
-
 WITH monthly_counts AS (
     SELECT
         user_id,

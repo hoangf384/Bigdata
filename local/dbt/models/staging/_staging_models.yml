@@ -1,0 +1,68 @@
+version: 2
+
+models:
+  - name: stg_contracts
+    description: "Dữ liệu hợp đồng người dùng đã được làm sạch (deduplicated)."
+    columns:
+      - name: contract
+        description: "Mã hợp đồng (PK)."
+        tests:
+          - unique
+          - not_null
+      - name: user_id
+        description: "Mã người dùng, khóa ngoại tham chiếu đến bảng dim_users."
+        tests:
+          - not_null
+
+  - name: stg_log_search
+    description: "Dữ liệu log tìm kiếm đã được làm sạch (deduplicated)."
+    columns:
+      - name: event_id
+        description: "Mã sự kiện tìm kiếm duy nhất (PK)."
+        tests:
+          - unique
+          - not_null
+      - name: user_id
+        tests:
+          - not_null
+      - name: search_datetime
+        tests:
+          - not_null
+
+  - name: stg_log_content
+    description: "Dữ liệu log xem nội dung từ JSON nguồn."
+    columns:
+      - name: log_id
+        description: "Khóa chính tự sinh trong quá trình parse log (_id)."
+        tests:
+          - unique
+          - not_null
+      - name: contract
+        tests:
+          - not_null
+      - name: log_date
+        tests:
+          - not_null
+
+  - name: stg_user_views
+    description: "Lượt xem người dùng từ nguồn."
+    columns:
+      - name: user_id
+        tests:
+          - not_null
+      - name: content_name
+        tests:
+          - not_null
+      - name: report_month
+        tests:
+          - not_null
+          - accepted_values:
+              values: [4, 5, 6, 7]
+
+  - name: stg_keyword_mapping
+    description: "Bảng mapping thô từ AI."
+    columns:
+      - name: keyword
+        tests:
+          - unique
+          - not_null

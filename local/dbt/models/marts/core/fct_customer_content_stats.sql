@@ -1,5 +1,3 @@
-{{ config(materialized='table') }}
-
 WITH enriched_logs AS (
     SELECT 
         contract,

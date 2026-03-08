@@ -1,8 +1,8 @@
-name: 'ott_analytics'
-version: '1.0.0'
+name: "ott_analytics"
+version: "1.0.0"
 config-version: 2
 
-profile: 'ott_analytics'
+profile: "ott_analytics"
 
 model-paths: ["models"]
 analysis-paths: ["analyses"]
@@ -19,7 +19,10 @@ models:
   ott_analytics:
     staging:
       +materialized: view
+      +schema: staging
     intermediate:
-      +materialized: table
+      +materialized: view
+      +schema: intermediate
     marts:
       +materialized: table
+      +schema: marts

@@ -1,5 +1,3 @@
-{{ config(materialized='table') }}
-
 SELECT 
     log_id,
     log_date,

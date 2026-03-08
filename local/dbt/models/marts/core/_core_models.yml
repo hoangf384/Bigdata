@@ -5,71 +5,53 @@ models:
     description: "Bảng Dimensional (bảng chiều) định danh người dùng trên hệ thống OTT."
     columns:
       - name: user_id
-        description: "Khóa chính (PK), định danh duy nhất của mỗi người dùng."
         tests:
           - unique
           - not_null
-      - name: created_date
-        description: "Thời gian người dùng tạo tài khoản lần đầu tiên."
 
   - name: dim_contracts
     description: "Bảng Dimensional lưu trữ thông tin hợp đồng và mã thiết bị thực tế."
     columns:
       - name: contract
-        description: "Mã hợp đồng, có thể đóng vai trò như khóa chính (PK)."
         tests:
           - unique
           - not_null
-      - name: Mac
-        description: "Địa chỉ MAC của thiết bị."
       - name: user_id
-        description: "Mã người dùng, là khóa ngoại (FK) tham chiếu tới bảng dim_users."
         tests:
           - not_null
-          # Ràng buộc khóa ngoại, yêu cầu user_id phải có trong bảng dim_users
           - relationships:
               to: ref('dim_users')
               field: user_id
 
   - name: fct_customer_content_stats
-    description: "Bảng Fact tổng hợp hành vi xem nội dung của khách hàng (theo logic từ etl_30_days.py)."
+    description: "Bảng Fact tổng hợp hành vi xem nội dung của khách hàng."
     columns:
       - name: contract
-        description: "Mã định danh khách hàng (hợp đồng)."
         tests:
           - unique
           - not_null
+          - relationships:
+              to: ref('dim_contracts')
+              field: contract
       - name: active_days
-        description: "Số ngày khách hàng có phát sinh log xem nội dung."
-      - name: most_watch
-        description: "Loại nội dung khách hàng xem nhiều nhất (theo tổng thời lượng)."
-      - name: taste
-        description: "Danh sách các loại nội dung khách hàng đã từng xem, nối bằng dấu '-'."
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 31
       - name: duration_truyen_hinh
-        description: "Tổng thời lượng xem Truyền hình."
-      - name: duration_phim_truyen
-        description: "Tổng thời lượng xem Phim truyện."
-      - name: duration_the_thao
-        description: "Tổng thời lượng xem Thể thao."
-      - name: duration_thieu_nhi
-        description: "Tổng thời lượng xem Thiếu nhi."
-      - name: duration_giai_tri
-        description: "Tổng thời lượng xem Giải trí."
+        tests:
+          - dbt_utils.not_negative
 
   - name: fct_customer_search_taste
-    description: "Bảng phân tích sự thay đổi sở thích (taste) của khách hàng thông qua hành vi tìm kiếm (Search Logs) giữa các tháng."
+    description: "Bảng phân tích sự thay đổi sở thích (taste) của khách hàng."
     columns:
       - name: user_id
         tests:
           - not_null
-      - name: most_search_m6
-        description: "Từ khóa tìm kiếm nhiều nhất tháng 6."
-      - name: most_search_m7
-        description: "Từ khóa tìm kiếm nhiều nhất tháng 7."
-      - name: category_m6
-        description: "Danh mục chuẩn tương ứng tháng 6."
-      - name: category_m7
-        description: "Danh mục chuẩn tương ứng tháng 7."
+          - relationships:
+              to: ref('dim_users')
+              field: user_id
       - name: taste_status
-        description: "Trạng thái thay đổi: New, Churned, Unchanged, Changed."
-
+        tests:
+          - accepted_values:
+              values: ['New', 'Churned', 'Unchanged', 'Changed']

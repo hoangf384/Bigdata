@@ -2,91 +2,54 @@ version: 2
 
 models:
   - name: fct_search_logs
-    description: "Bảng Fact (bảng sự kiện) ghi nhận chi tiết lịch sử tìm kiếm của người dùng theo sự kiện."
+    description: "Bảng Fact ghi nhận chi tiết lịch sử tìm kiếm."
     columns:
       - name: event_id
-        description: "Mã khóa chính của từng sự kiện tìm kiếm riêng biệt."
         tests:
           - unique
           - not_null
       - name: user_id
-        description: "Khóa ngoại (FK) liên kết tới id của người dùng."
         tests:
           - not_null
-      - name: search_datetime
-        description: "Thời gian chuẩn (Timestamp) diễn ra hành động tìm kiếm."
-        tests:
-          - not_null
-      - name: keyword
-        description: "Từ khóa thô người dùng nhập vào."
-      - name: category
-        description: "Nhãn danh mục (Category) đã được phân loại/vẽ map bằng LLM OpenAI."
+          - relationships:
+              to: ref('dim_users')
+              field: user_id
       - name: platform
-        description: "Nền tảng thực thi tìm kiếm (Ví dụ: iOS, Android, SmartTV, Web)."
-      - name: network_type
-        description: "Phân loại kết nối mạng (Cellular, Wifi, Wifi5G...)."
+        tests:
+          - accepted_values:
+              values: ['iOS', 'Android', 'SmartTV', 'Web', 'Box']
 
   - name: fct_content_logs
-    description: "Bảng Fact ghi nhận lịch sử xem nội dung từ thiết bị phát (được tổng hợp từ log_content JSON file)."
+    description: "Bảng Fact ghi nhận lịch sử xem nội dung."
     columns:
       - name: log_id
-        description: "Khóa chính tự sinh trong quá trình parse log (_id)."
         tests:
           - unique
           - not_null
-      - name: log_date
-        description: "Ngày xem thực tế, bóc tách từ tên file JSON gốc."
-        tests:
-          - not_null
       - name: contract
-        description: "Mã hợp đồng phát sinh log, là khóa ngoại (FK) kết nối về dim_contracts."
         tests:
           - not_null
-      - name: mac_address
-        description: "Địa chỉ thiết bị xem nội dung."
-      - name: app_name
-        description: "Tên ứng dụng con phân vùng trên thiết bị (Truyền hình, Phim ảnh, Thể thao...)."
-      - name: total_duration
-        description: "Tổng thời gian người dùng xem tính bằng giây."
+          - relationships:
+              to: ref('dim_contracts')
+              field: contract
 
   - name: fct_user_views
-    description: "Bảng Fact tổng hợp lịch sử lượt xem của người dùng trên mỗi nội dung/màn hình theo từng tháng."
+    description: "Bảng Fact tổng hợp lịch sử lượt xem."
     columns:
       - name: user_id
-        description: "Khóa ngoại tham chiếu về người dùng."
         tests:
           - not_null
-      - name: content_name
-        description: "Tên nội dung người dùng truy cập."
-        tests:
-          - not_null
-      - name: screen_name
-        description: "Tên màn hình trên UX của app (Ví dụ: Home, Search Result, View Detail)."
+          - relationships:
+              to: ref('dim_users')
+              field: user_id
       - name: total_view
-        description: "Tổng lượt (view) tại tháng phát sinh thống kê (Số lượng nguyên)."
-      - name: report_month
-        description: "Tháng báo cáo (giá trị Integer: 4, 5, 6...)."
         tests:
-          - not_null
-
-  - name: int_user_monthly_most_search
-    description: "Thống kê từ khóa được tìm kiếm nhiều nhất của mỗi người dùng theo từng tháng."
-    columns:
-      - name: user_id
-        tests:
-          - not_null
-      - name: report_month
-        tests:
-          - not_null
-      - name: most_search
-        description: "Từ khóa xuất hiện nhiều nhất trong tháng."
+          - dbt_utils.not_negative
 
   - name: int_standardized_mapping
-    description: "Bảng mapping từ khóa và danh mục đã được chuẩn hóa từ kết quả LLM."
+    description: "Bảng mapping từ khóa và danh mục chuẩn hóa."
     columns:
       - name: keyword
         tests:
           - unique
           - not_null
-      - name: category_std
-        description: "Danh mục chuẩn sau khi ánh xạ."

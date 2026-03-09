@@ -1,15 +1,15 @@
 WITH base AS (
     SELECT
         contract,
-        Mac,
         user_id,
-        ROW_NUMBER() OVER (PARTITION BY contract ORDER BY Mac DESC) as row_num
+        mac,
+        ROW_NUMBER() OVER (PARTITION BY contract ORDER BY mac DESC) as row_num
     FROM {{ source('raw', 'contracts') }}
 )
 
 SELECT
     contract,
-    Mac,
+    mac,
     user_id
 FROM base
 WHERE row_num = 1

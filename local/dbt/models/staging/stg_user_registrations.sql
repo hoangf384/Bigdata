@@ -3,7 +3,7 @@ WITH raw_data AS (
         NULLIF(TRIM(CAST(log_user_id as VARCHAR)), 'NULL') as user_id,
         created_date
     FROM {{ source('raw', 'user_registrations') }}
-    WHERE log_user_id IS NOT NULL
+    WHERE user_id IS NOT NULL
 ),
 
 deduped_by_user AS (

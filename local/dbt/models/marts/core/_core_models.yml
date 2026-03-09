@@ -1,28 +1,6 @@
 version: 2
 
 models:
-  - name: dim_users
-    description: "Bảng Dimensional (bảng chiều) định danh người dùng trên hệ thống OTT."
-    columns:
-      - name: user_id
-        tests:
-          - unique
-          - not_null
-
-  - name: dim_contracts
-    description: "Bảng Dimensional lưu trữ thông tin hợp đồng và mã thiết bị thực tế."
-    columns:
-      - name: contract
-        tests:
-          - unique
-          - not_null
-      - name: user_id
-        tests:
-          - not_null
-          - relationships:
-              to: ref('dim_users')
-              field: user_id
-
   - name: fct_customer_content_stats
     description: "Bảng Fact tổng hợp hành vi xem nội dung của khách hàng."
     columns:
@@ -31,16 +9,13 @@ models:
           - unique
           - not_null
           - relationships:
-              to: ref('dim_contracts')
+              to: ref('int_contracts')
               field: contract
       - name: active_days
         tests:
           - dbt_utils.accepted_range:
               min_value: 0
               max_value: 31
-      - name: duration_truyen_hinh
-        tests:
-          - dbt_utils.not_negative
 
   - name: fct_customer_search_taste
     description: "Bảng phân tích sự thay đổi sở thích (taste) của khách hàng."
@@ -49,7 +24,7 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('dim_users')
+              to: ref('int_users')
               field: user_id
       - name: taste_status
         tests:

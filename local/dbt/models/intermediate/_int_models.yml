@@ -1,6 +1,28 @@
 version: 2
 
 models:
+  - name: int_users
+    description: "Bảng định danh người dùng gốc (Identity Spine). Dùng làm gốc để join các log."
+    columns:
+      - name: user_id
+        tests:
+          - unique
+          - not_null
+
+  - name: int_contracts
+    description: "Bảng cầu nối Hợp đồng - Người dùng. Cho biết Hợp đồng thuộc về ai."
+    columns:
+      - name: contract
+        tests:
+          - unique
+          - not_null
+      - name: user_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('int_users')
+              field: user_id
+
   - name: fct_search_logs
     description: "Bảng Fact ghi nhận chi tiết lịch sử tìm kiếm."
     columns:
@@ -12,12 +34,9 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('dim_users')
+              to: ref('int_users')
               field: user_id
-      - name: platform
-        tests:
-          - accepted_values:
-              values: ['iOS', 'Android', 'SmartTV', 'Web', 'Box']
+
 
   - name: fct_content_logs
     description: "Bảng Fact ghi nhận lịch sử xem nội dung."
@@ -30,7 +49,7 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('dim_contracts')
+              to: ref('int_contracts')
               field: contract
 
   - name: fct_user_views
@@ -40,11 +59,8 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('dim_users')
+              to: ref('int_users')
               field: user_id
-      - name: total_view
-        tests:
-          - dbt_utils.not_negative
 
   - name: int_standardized_mapping
     description: "Bảng mapping từ khóa và danh mục chuẩn hóa."

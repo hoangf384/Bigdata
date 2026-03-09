@@ -1,6 +1,21 @@
 version: 2
 
 models:
+  - name: mart_customer_360
+    description: "Bảng Golden Record - Customer 360 Final. Hội tụ toàn bộ thông tin định danh, hợp đồng, hành vi xem, tìm kiếm, thiết bị và chỉ số trung thành."
+    columns:
+      - name: user_id
+        tests:
+          - unique
+          - not_null
+      - name: is_subscriber
+        description: "TRUE nếu người dùng có hợp đồng gói cước."
+      - name: customer_lifecycle_segment
+        description: "Phân loại khách hàng dựa trên hành vi và độ tươi mới của hoạt động."
+        tests:
+          - accepted_values:
+              values: ['VVIP - Active', 'Subscriber - Healthy', 'Subscriber - At Risk', 'Loyal Guest', 'Active Guest', 'Casual Guest']
+
   - name: fct_customer_content_stats
     description: "Bảng Fact tổng hợp hành vi xem nội dung của khách hàng."
     columns:

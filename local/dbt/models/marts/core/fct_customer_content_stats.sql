@@ -1,9 +1,9 @@
 WITH enriched_logs AS (
-    SELECT 
+    SELECT
         contract,
         log_date,
         total_duration,
-        CASE 
+        CASE
             WHEN app_name IN ('CHANNEL', 'DSHD', 'KPLUS', 'KPlus') THEN 'Truyen Hinh'
             WHEN app_name IN ('VOD', 'FIMS_RES', 'BHD_RES', 'VOD_RES', 'FIMS', 'BHD', 'DANET') THEN 'Phim Truyen'
             WHEN app_name = 'RELAX' THEN 'Giai Tri'
@@ -16,7 +16,7 @@ WITH enriched_logs AS (
 ),
 
 customer_pivot AS (
-    SELECT 
+    SELECT
         contract,
         COUNT(DISTINCT log_date) AS active_days,
         SUM(CASE WHEN content_type = 'Truyen Hinh' THEN total_duration ELSE 0 END) AS duration_truyen_hinh,
@@ -29,19 +29,19 @@ customer_pivot AS (
     GROUP BY 1
 ),
 final_stats AS (
-    SELECT 
+    SELECT
         *,
         GREATEST(
-            duration_truyen_hinh, 
-            duration_phim_truyen, 
-            duration_the_thao, 
-            duration_thieu_nhi, 
+            duration_truyen_hinh,
+            duration_phim_truyen,
+            duration_the_thao,
+            duration_thieu_nhi,
             duration_giai_tri
         ) AS max_duration
     FROM customer_pivot
 )
 
-SELECT 
+SELECT
     contract,
     active_days,
     duration_truyen_hinh,
@@ -49,7 +49,7 @@ SELECT
     duration_the_thao,
     duration_thieu_nhi,
     duration_giai_tri,
-    CASE 
+    CASE
         WHEN duration_truyen_hinh = max_duration AND max_duration > 0 THEN 'Truyen Hinh'
         WHEN duration_phim_truyen = max_duration AND max_duration > 0 THEN 'Phim Truyen'
         WHEN duration_the_thao = max_duration AND max_duration > 0 THEN 'The Thao'

@@ -2,20 +2,20 @@ version: 2
 
 models:
   - name: stg_contracts
-    description: "Dữ liệu hợp đồng người dùng đã được làm sạch (deduplicated)."
+    description: "Dữ liệu hợp đồng người dùng. Đã làm sạch logic NULL/0 và chuẩn hóa user_id."
     columns:
       - name: contract
-        description: "Mã hợp đồng (PK)."
+        description: "Mã hợp đồng (PK). Đã loại bỏ giá trị 'NULL'."
         tests:
           - unique
           - not_null
       - name: user_id
-        description: "Mã người dùng, khóa ngoại tham chiếu đến bảng dim_users."
+        description: "Mã người dùng (FK). Đã ép kiểu VARCHAR và TRIM."
         tests:
           - not_null
 
   - name: stg_log_search
-    description: "Dữ liệu log tìm kiếm đã được làm sạch (deduplicated)."
+    description: "Log tìm kiếm người dùng từ Parquet. Đã deduplicate theo event_id."
     columns:
       - name: event_id
         description: "Mã sự kiện tìm kiếm duy nhất (PK)."
@@ -23,46 +23,64 @@ models:
           - unique
           - not_null
       - name: user_id
+        description: "Mã người dùng thực hiện search. Đã chuẩn hóa logic NULL."
         tests:
           - not_null
-      - name: search_datetime
+      - name: datetime
+        description: "Thời điểm tìm kiếm (TIMESTAMP)."
         tests:
           - not_null
 
   - name: stg_log_content
-    description: "Dữ liệu log xem nội dung từ JSON nguồn."
+    description: "Log xem nội dung chi tiết từ JSON. Đã parse Contract và Duration."
     columns:
       - name: log_id
-        description: "Khóa chính tự sinh trong quá trình parse log (_id)."
+        description: "Mã log duy nhất (PK)."
         tests:
           - unique
           - not_null
       - name: contract
+        description: "Mã hợp đồng thực hiện xem. Đã loại bỏ 'NULL' và '0'."
         tests:
           - not_null
       - name: log_date
+        description: "Ngày ghi nhận log (DATE)."
         tests:
           - not_null
 
   - name: stg_user_views
-    description: "Lượt xem người dùng từ nguồn."
+    description: "Bảng tổng hợp lượt xem từ tháng 4, 5, 6. Dữ liệu đã được chuẩn hóa Identity."
     columns:
       - name: user_id
         tests:
           - not_null
-      - name: content_name
-        tests:
-          - not_null
       - name: report_month
+        description: "Tháng báo cáo (4, 5, 6)."
         tests:
           - not_null
           - accepted_values:
-              values: [4, 5, 6, 7]
+              values: [4, 5, 6]
+
+  - name: stg_user_registrations
+    description: "Danh mục đăng ký người dùng gốc từ CSV."
+    columns:
+      - name: id
+        description: "ID dòng gốc (column0)."
+        tests:
+          - unique
+          - not_null
+      - name: user_id
+        description: "Mã định danh người dùng duy nhất. Đã chuẩn hóa VARCHAR + TRIM."
+        tests:
+          - unique
+          - not_null
 
   - name: stg_keyword_mapping
-    description: "Bảng mapping thô từ AI."
+    description: "Bảng mapping từ khóa sang danh mục chuẩn hóa (AI Generated)."
     columns:
       - name: keyword
         tests:
-          - unique
+          - not_null
+      - name: category_std
+        tests:
           - not_null

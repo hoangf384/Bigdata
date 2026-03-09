@@ -63,9 +63,9 @@ def join_user(df_contract, df_user):
         df_user, left_on="random_rn", right_on="rn", how="inner"
     ).select(
         [
-            "Contract",
-            "Mac",
+            pl.col("Contract").alias("contract"),
             pl.col("log_user_id").alias("user_id"),
+            pl.col("Mac").alias("mac"),
         ]
     )
 

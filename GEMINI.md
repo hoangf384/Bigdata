@@ -2,35 +2,35 @@
 
 This document serves as the foundational architectural mandate for the transition from local DuckDB to a GCP-native Big Data stack (BigQuery + GCS + Spark + dbt).
 
-## 1. Project Structure (Blueprint)
+## 1. Project Structure (Flat Architecture)
 
 ```text
 Bigdata/
-├── cloud/                      # Production logic for GCP
-│   ├── ingestion/              # [BRONZE LAYER] - PySpark Ingestion Logic
-│   │   ├── jobs/               # Spark jobs per source (logs, users, months)
-│   │   ├── schemas/            # Spark StructType definitions for schema enforcement
-│   │   └── utils/              # GCP helpers & common Spark functions
-│   │
-│   ├── dbt/                    # [SILVER & GOLD LAYER] - Transformation logic
-│   │   ├── models/
-│   │   │   ├── staging/        # [SILVER - Base] External Tables (GCS Parquet)
-│   │   │   ├── intermediate/   # [SILVER - Clean] Joins & deduplication logic
-│   │   │   └── marts/          # [GOLD - Business] Final Tables for BI
-│   │   │       └── core/       # Customer 360, Fact/Dim tables
-│   │   ├── profiles.yml        # BigQuery OAuth/Service Account config
-│   │   └── dbt_project.yml     # Materialization: Marts must be 'table'
-│   │
-│   ├── terraform/              # Infrastructure as Code (GCS, BQ, Dataproc)
-│   └── notebooks/              # Cloud-based EDA (Vertex AI)
+├── ingestion/              # [BRONZE LAYER] - PySpark Ingestion Logic
+│   ├── jobs/               # Spark jobs per source (logs, users, months)
+│   ├── schemas/            # Spark StructType definitions for schema enforcement
+│   └── utils/              # GCP helpers & common Spark functions
 │
-├── local/                      # Legacy / Prototyping Environment
-│   ├── data/                   # Local raw files (CSV, JSON, Parquet)
-│   └── notebooks/              # Local prototype logic
+├── dbt/                    # [SILVER & GOLD LAYER] - Transformation logic
+│   ├── models/
+│   │   ├── staging/        # [SILVER - Base] External Tables (GCS Parquet)
+│   │   ├── intermediate/   # [SILVER - Clean] Joins & deduplication logic
+│   │   └── marts/          # [GOLD - Business] Final Tables for BI
+│   │       └── core/       # Customer 360, Fact/Dim tables
+│   ├── profiles.yml        # BigQuery OAuth/Service Account config
+│   └── dbt_project.yml     # Materialization: Marts must be 'table'
 │
-├── scripts/                    # DevOps & Environment setup scripts
-├── requirements.txt            # Python dependencies (pyspark, dbt-bigquery, etc.)
-└── GEMINI.md                   # This architectural guide
+├── data/                   # Raw data files (CSV, JSON, Parquet)
+├── notebooks/              # EDA & Prototyping (Jupyter)
+├── infra/                  # Infrastructure (Docker for Spark, Metabase, MySQL)
+├── queries/                # Legacy BigQuery/SQL scripts
+├── scripts/                # Operations & Legacy pipelines
+│   ├── legacy/             # Former local ETL pipelines
+│   └── ops/                # Environment setup & DevOps
+├── yapping/                # Experimental/Enrichment scripts (Untracked in Git)
+├── .devcontainer/          # Standardized dev environment
+├── requirements.txt        # Python dependencies
+└── GEMINI.md               # This architectural guide
 ```
 
 ## 2. Data Flow Mandates
@@ -45,3 +45,4 @@ Bigdata/
 -   Always validate schemas in the Spark layer before uploading to GCS.
 -   Marts should be documented with YAML descriptions for downstream BI clarity.
 -   Use `dbt test` at the Silver layer to ensure data integrity before calculating Gold metrics.
+-   **yapping/** folder is for experimental scripts and is ignored by Git.

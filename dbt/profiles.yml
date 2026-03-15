@@ -1,0 +1,15 @@
+flags:
+  send_anonymous_usage_stats: False
+
+ott_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: project-f5ad855c-9811-45c4-a42
+      dataset: bigdata
+      location: US
+      threads: 4
+      timeout_seconds: 300
+      priority: interactive

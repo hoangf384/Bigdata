@@ -1,46 +1,31 @@
 services:
-  spark-master:
+  spark:
     build:
       context: .
       dockerfile: Dockerfile
     image: spark-custom:3.5.1
-    container_name: spark-master
+    container_name: spark-node
     ports:
-      - "8080:8080"
-      - "7077:7077"
+      - "8080:8080" # Spark Master UI
+      - "4040:4040" # Spark Job UI
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-node
+      - GOOGLE_APPLICATION_CREDENTIALS=/opt/spark/credentials.json
+      - GCP_PROJECT_ID=project-f5ad855c-9811-45c4-a42
     command: >
       /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
-        --host spark-master
-    environment:
-      - SPARK_MASTER_WEBUI_PORT=8080
+        --host spark-node
     volumes:
-      - /home/hp/Bigdata/local:/workspace:z
-      - /home/hp/Bigdata/local/data:/data:z
-      - /home/hp/Bigdata/local/pipelines:/pipelines:z
-    networks:
-      - spark-net
-
-  spark-worker:
-    image: spark-custom:3.5.1
-    container_name: spark-worker
-    depends_on:
-      - spark-master
-    ports:
-      - "8081:8081"
-    command: >
-      /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker
-        --cores 4
-        --memory 3G
-        spark://spark-master:7077
-    environment:
-      - SPARK_WORKER_WEBUI_PORT=8081
-    volumes:
-      - /home/hp/Bigdata/local:/workspace:z
-      - /home/hp/Bigdata/local/data:/data:z
-      - /home/hp/Bigdata/local/pipelines:/pipelines:z
-    networks:
-      - spark-net
-
-networks:
-  spark-net:
-    external: true
+      - /home/hp/Bigdata:/app:z
+      - /home/hp/Bigdata/data:/data:z
+      - /home/hp/Bigdata/ingestion:/ingestion:z
+      # Thêm :z để Fedora/SELinux cho phép truy cập
+      - /home/hp/.config/gcloud/application_default_credentials.json:/opt/spark/credentials.json:ro,z
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: '4'
+        reservations:
+          memory: 4G

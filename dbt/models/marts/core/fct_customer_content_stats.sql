@@ -57,11 +57,12 @@ SELECT
         WHEN duration_giai_tri = max_duration AND max_duration > 0 THEN 'Giai Tri'
         ELSE 'None'
     END AS most_watch,
-    CONCAT_WS('-',
+    ARRAY_TO_STRING([
         CASE WHEN duration_giai_tri > 0 THEN 'Giai Tri' END,
         CASE WHEN duration_phim_truyen > 0 THEN 'Phim Truyen' END,
         CASE WHEN duration_the_thao > 0 THEN 'The Thao' END,
         CASE WHEN duration_thieu_nhi > 0 THEN 'Thieu Nhi' END,
         CASE WHEN duration_truyen_hinh > 0 THEN 'Truyen Hinh' END
-    ) AS taste
+    ], '-') AS taste
 FROM final_stats
+

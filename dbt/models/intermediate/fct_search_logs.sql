@@ -1,5 +1,4 @@
 WITH cleaned AS (
-
     SELECT
         event_id,
         user_id,
@@ -9,7 +8,6 @@ WITH cleaned AS (
         platform,
         network_type
     FROM {{ ref('stg_log_search') }}
-
 )
 
 SELECT *

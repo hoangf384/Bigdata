@@ -58,8 +58,8 @@ models:
         description: "Tháng báo cáo (4, 5, 6)."
         tests:
           - not_null
-          - accepted_values:
-              values: [4, 5, 6]
+          - dbt_utils.expression_is_true:
+              expression: "in (4, 5, 6)"
 
   - name: stg_user_registrations
     description: "Danh mục đăng ký người dùng gốc từ CSV."

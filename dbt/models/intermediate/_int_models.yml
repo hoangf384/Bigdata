@@ -37,7 +37,6 @@ models:
               to: ref('int_users')
               field: user_id
 
-
   - name: fct_content_logs
     description: "Bảng Fact ghi nhận lịch sử xem nội dung."
     columns:
@@ -69,3 +68,15 @@ models:
         tests:
           - unique
           - not_null
+
+  - name: int_user_device_summary
+    description: "Tổng hợp thông tin thiết bị (Mac address) và platform mà người dùng sử dụng."
+
+  - name: int_user_loyalty_metrics
+    description: "Tính toán các chỉ số về lòng trung thành như ngày hoạt động đầu tiên/cuối cùng, thâm niên và số ngày hoạt động."
+
+  - name: int_user_monthly_most_search
+    description: "Xác định từ khóa được tìm kiếm nhiều nhất của mỗi người dùng theo từng tháng."
+
+  - name: int_user_view_summary
+    description: "Tổng hợp số lượt xem của người dùng qua các tháng."

@@ -2,8 +2,14 @@ WITH user_spine AS (
     SELECT * FROM {{ ref('int_users') }}
 ),
 
+-- Thu gọn contract về mức user_id để tránh nhân đôi dòng
 contract_info AS (
-    SELECT * FROM {{ ref('int_contracts') }}
+    SELECT 
+        user_id, 
+        MAX(contract) as contract, -- Lấy 1 hợp đồng đại diện
+        COUNT(contract) as total_contracts
+    FROM {{ ref('int_contracts') }}
+    GROUP BY 1
 ),
 
 content_stats AS (
@@ -31,27 +37,29 @@ SELECT
     u.created_date AS registration_date,
     c.contract,
     d.primary_mac_address AS mac_address,
-    d.search_platforms,
     
     -- Trạng thái thuê bao
     CASE WHEN c.contract IS NOT NULL THEN TRUE ELSE FALSE END AS is_subscriber,
+    c.total_contracts,
     
-    -- Hành vi xem chi tiết (Paid - Tháng 4)
-    COALESCE(cs.active_days, 0) AS content_active_days_apr,
-    cs.most_watch AS most_watched_category_apr,
+    -- Hành vi xem chi tiết (Paid Logs)
+    COALESCE(cs.active_days, 0) AS content_total_active_days,
+    cs.most_watch AS primary_content_category,
     
-    -- Hành vi xem tổng quát (Free+Paid)
-    COALESCE(vs.total_views_all_time, 0) AS total_views_all_time,
+    -- Hành vi xem tổng quát (Free+Paid từ 3 tháng)
+    COALESCE(vs.total_views_all_time, 0) AS viewership_total_views,
+    vs.active_months_count AS viewership_active_months,
     
-    -- Hành vi tìm kiếm (Tháng 6,7)
+    -- Hành vi tìm kiếm (Sở thích Tháng 7 - gần nhất)
     st.most_search_m7 AS latest_search_keyword,
     st.category_m7 AS latest_search_category,
+    st.taste_status,
     
     -- Chỉ số trung thành & hoạt động
     l.first_active_date,
     l.last_active_date,
     COALESCE(l.days_since_last_activity, 999) AS days_since_last_activity,
-    COALESCE(l.total_active_days, 0) AS active_days_count,
+    COALESCE(l.total_active_days, 0) AS total_active_days_count,
     
     -- Phân lớp khách hàng thông minh
     CASE 

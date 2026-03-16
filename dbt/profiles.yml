@@ -8,8 +8,8 @@ ott_analytics:
       type: bigquery
       method: oauth
       project: project-f5ad855c-9811-45c4-a42
-      dataset: bigdata
-      location: US
+      dataset: televisiondata
+      location: asia-southeast1
       threads: 4
       timeout_seconds: 300
       priority: interactive

@@ -1,8 +1,8 @@
 WITH base AS (
     SELECT
-        NULLIF(TRIM(CAST(contract AS VARCHAR)), 'NULL') AS contract,
-        NULLIF(TRIM(CAST(user_id AS VARCHAR)), 'NULL') AS user_id,
-        NULLIF(TRIM(CAST(mac AS VARCHAR)), 'NULL') as mac,
+        NULLIF(TRIM(CAST(contract AS STRING)), 'NULL') AS contract,
+        NULLIF(TRIM(CAST(user_id AS STRING)), 'NULL') AS user_id,
+        NULLIF(TRIM(CAST(mac AS STRING)), 'NULL') as mac,
         ROW_NUMBER() OVER (PARTITION BY contract ORDER BY mac DESC) as row_num
     FROM {{ source('raw', 'contracts') }}
 )

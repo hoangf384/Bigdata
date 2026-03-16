@@ -15,7 +15,8 @@ month_6 AS (
         most_search AS most_search_m6,
         category AS category_m6
     FROM enriched_search
-    WHERE MONTH(report_month) = 6 AND YEAR(report_month) = 2022
+    WHERE EXTRACT(MONTH FROM report_month) = 6
+      AND EXTRACT(YEAR FROM report_month) = 2022
 ),
 
 month_7 AS (
@@ -24,7 +25,8 @@ month_7 AS (
         most_search AS most_search_m7,
         category AS category_m7
     FROM enriched_search
-    WHERE MONTH(report_month) = 7 AND YEAR(report_month) = 2022
+    WHERE EXTRACT(MONTH FROM report_month) = 7
+      AND EXTRACT(YEAR FROM report_month) = 2022
 )
 
 SELECT

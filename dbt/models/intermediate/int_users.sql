@@ -2,17 +2,17 @@ WITH all_identities AS (
     -- Nguồn 1: Từ bảng đăng ký
     SELECT user_id FROM {{ ref('stg_user_registrations') }}
     
-    UNION
+    UNION DISTINCT
     
     -- Nguồn 2: Từ bảng hợp đồng
     SELECT user_id FROM {{ ref('stg_contracts') }}
     
-    UNION
+    UNION DISTINCT
     
     -- Nguồn 3: Từ bảng search
     SELECT user_id FROM {{ ref('stg_log_search') }}
 
-    UNION
+    UNION DISTINCT
 
     -- Nguồn 4: Từ bảng views (Quan trọng nhất để fix 42M lỗi)
     SELECT user_id FROM {{ ref('stg_user_views') }}

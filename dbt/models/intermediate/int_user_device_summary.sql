@@ -1,10 +1,9 @@
-WITH search_platforms AS (
+WITH search_activity AS (
     SELECT 
         user_id,
-        platform,
         MAX(search_datetime) as last_active
     FROM {{ ref('fct_search_logs') }}
-    GROUP BY 1, 2
+    GROUP BY 1
 ),
 
 contract_mac AS (
@@ -18,12 +17,10 @@ contract_mac AS (
 
 SELECT
     u.user_id,
-    -- Gom nhóm các platform search
-    STRING_AGG(DISTINCT s.platform, ', ') AS search_platforms,
-    -- Lấy Mac address từ hợp đồng
+    -- Lấy Mac address từ hợp đồng làm thiết bị chính
     MAX(c.device_id) AS primary_mac_address,
-    COUNT(DISTINCT s.platform) AS unique_platforms_count
+    MAX(s.last_active) AS last_search_at
 FROM {{ ref('int_users') }} u
-LEFT JOIN search_platforms s ON u.user_id = s.user_id
+LEFT JOIN search_activity s ON u.user_id = s.user_id
 LEFT JOIN contract_mac c ON u.user_id = c.user_id
 GROUP BY 1

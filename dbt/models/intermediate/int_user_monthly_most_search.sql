@@ -2,7 +2,7 @@ WITH monthly_counts AS (
     SELECT
         user_id,
         keyword,
-        DATE_TRUNC('month', search_datetime) AS report_month,
+        TIMESTAMP_TRUNC(search_datetime, MONTH) AS report_month,
         COUNT(*) AS search_count
     FROM {{ ref('fct_search_logs') }}
     WHERE user_id IS NOT NULL 

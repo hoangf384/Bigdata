@@ -1,79 +1,176 @@
-# Big Data Project - OTT Log Analytics Pipeline
+# Dự Án Big Data: OTT Log Analytics Pipeline (GCP Transition)
 
-Xem hướng dẫn thực thi local tại [README.md](local/README.md)
-
----
-
-## Lộ trình Chuyển đổi GCP
-
-
-### 1. Kiến trúc chuyển đổi Tech Stack sang GCP
-| Thành phần | Local/Docker | **GCP MVP (Serverless)** |
-| :--- | :--- | :--- |
-| **Storage (Data Lake)** | Local Disk | **Google Cloud Storage (GCS)** |
-| **Data Warehouse & Processing** | Spark on Docker | **BigQuery (SQL-based)** |
-| **Serving Layer** | MySQL (Docker) | **BigQuery** |
-| **Visualization (BI)** | Metabase (Local) | **Looker Studio** |
-| **Orchestration** | Manual / Scripts | **BigQuery Jobs / Scheduled Queries** |
-
-## thay đổi kiến trúc tại local (ý định)
-| Thành phần |  |  |
-| :--- | :--- | :--- |
-| **Storage (Data Lake)** | Local Disk | **MySQL/PostgreSQL on Docker** |
-| **Data Warehouse & Processing** | Spark on Docker | **DuckDB on .venv** |
-| **Serving Layer** | MySQL on Docker | **DuckDB on .venv** |
-| **Visualization (BI)** | - | - |
+Dự án này đánh dấu bước chuyển đổi từ kiến trúc xử lý dữ liệu cục bộ sang hệ sinh thái Big Data hiện đại trên Google Cloud Platform (GCP), sử dụng mô hình Medallion Architecture.
 
 ---
 
-### 2. Checklist Thực hiện MVP
+## Mục Lục (Outline)
+1. [Kiến Trúc Hệ Thống (Medallion Architecture)](#1-kiến-trúc-hệ-thống-medallion-architecture)
+2. [Yêu Cầu Môi Trường (Requirements)](#2-yêu-cầu-môi-trường-requirements)
+3. [Cấu Trúc Thư Mục](#3-cấu-trúc-thư-mục)
+4. [Lộ Trình Triển Khai (Timeline)](#4-lộ-trình-triển-khai-timeline)
+5. [Trạng Thái Hoàn Thành Chi Tiết](#5-trạng-thái-hoàn-thành-chi-tiết)
+6. [Bài Học Kinh Nghiệm (Key Learnings)](#6-bài-học-kinh-nghiệm-key-learnings)
+7. [Hướng Dẫn Chạy Dự Án (Commands to Run)](#7-hướng-dẫn-chạy-dự-án-commands-to-run)
+8. [Kết Quả Đầu Ra (Output)](#8-kết-quả-đầu-ra-output)
 
-#### Giai đoạn 1: Chuẩn bị Data Lake (GCS) 
-*   [x] **Tạo Bucket:** Đã tạo bucket `bigdata-proj` tại Singapore (`asia-southeast1`).
-*   [x] **Phân cấp Folder:** Tạo folder `raw/` để chứa các file thô, `final/` để chứa file đã xử lý.
+---
 
-> Đã hoàn thành
+## 1. Kiến Trúc Hệ Thống (Medallion Architecture)
 
-#### Giai đoạn 2: Kho dữ liệu & Xử lý (BigQuery)
-
-*   [x] **Tạo schema, table:** Tạo schema cho BigQuery và tạo table từ schema.
-
-*   [x] **Chỉnh sửa Pipeline:** refactor ETL_log_search.py và ETL_30_days.py thành [ETL-30-days.sql](cloud/queries/log_content/ETL-30-days.sql) và [ETL-log-search.sql](cloud/queries/log_search/ETL-log-search.sql).
-
-*   [x] **Chỉnh sửa Pipeline (pt.2):** Chuyển đổi logic lại của 3 file [mapping.py](local/pipelines/log_search/mapping.py), [enrich_v1.py](local/pipelines/log_search/enrich_v1.py) và [post_enrich.py](local/pipelines/log_search/post_enrich.py) thành SQL scripts.
-
-*   [ ] **(NEW) Chỉnh sửa Pipeline (pt.3):** Tạo bảng dimension `dim_user_mapping` từ `customer_content_taste` và `customer_taste_final`.
-
-> `dim_user_mapping` có cấu trúc như sau:
-
-user_id (PK) | Contract (FK) | created_date | status (Active/Inactive)
-
-#### Giai đoạn 3: Trực quan hóa (Looker Studio)
-*   [x] **Kết nối nguồn dữ liệu:** Kết nối Looker Studio với BigQuery.
-*   [x] **Chọn bảng:** Trỏ tới đúng Project -> Dataset -> Table/View.
-*   [ ] **Thiết kế Dashboard:** Kéo thả các biểu đồ phân tích thời lượng, hành vi người dùng.
-
-#### Giai đoạn 4: Quản lý chi phí & Tự động hóa
-*   [ ] **Budget Alert:** Cài đặt cảnh báo để kiểm soát 7.8M credit.
-*   [ ] **Tối ưu hóa:** Sử dụng mô hình chi phí "On-demand".
-
-### 3. Hình ảnh minh họa
+Sử dụng kết hợp PySpark để xử lý dữ liệu thô (Ingestion) và dbt để biến đổi dữ liệu (Transformation) ngay trên BigQuery.
 
 ```mermaid
-graph LR
-    subgraph "Google Cloud Platform <br/>(MVP)"
-        A[(Cloud Storage)]
-        subgraph "BigQuery"
-            B["compute"]
-            C["external table"]
-        end
-        D[(Looker Studio)]
+graph TD
+    subgraph "1. BRONZE LAYER (Ingestion)"
+        A[Raw JSON/CSV Logs] -->|PySpark on Docker| B[(GCS - Parquet Files)]
     end
 
-    subgraph "BigQuery"
-
+    subgraph "2. SILVER LAYER (Transformation)"
+        B -->|dbt External Tables| C[Staging Models]
+        C -->|dbt Transformation| D[Intermediate Models]
     end
-    A -->|Upload file JSON/Parquet| B
-    B -->|computed| C
-    C -->|Load Data| D
+
+    subgraph "3. GOLD LAYER (Business)"
+        D -->|dbt Materialization| E[(BigQuery Tables - Marts)]
+    end
+
+    subgraph "4. SERVING & BI"
+        E --> F[Looker Studio / Metabase]
+    end
+
+
 ```
+
+---
+
+## 2. Yêu Cầu Môi Trường (Requirements)
+
+Để chạy dự án, hệ thống cần đáp ứng các thành phần sau:
+
+### Phầm mềm và Công cụ
+- Python 3.10+
+- Apache Spark (PySpark) được cài đặt và cấu hình sử dụng GCS Connector (`gcs-connector:hadoop3`).
+- dbt-core và dbt-bigquery phiên bản 1.11.1 trở lên.
+- dbt-external-tables (Package dbt để quản lý External Tables BQ).
+- Google Cloud SDK (gcloud CLI).
+
+### Quyền hạn GCP (IAM Roles)
+Cần có một Project trên Google Cloud và gán quyền đúng mức:
+- Storage Object Admin (Quyền cho Spark upload dữ liệu thô lên GCS).
+- BigQuery Data Editor, BigQuery Job User (Quyền cho dbt thao tác tạo/xóa bảng trên BigQuery).
+
+### Chuẩn bị môi trường Python ảo (Virtual Environment)
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+---
+
+## 3. Cấu Trúc Thư Mục
+
+* `ingestion/`: Chứa mã nguồn PySpark để đọc dữ liệu thô và ghi định dạng Parquet lên kho lưu trữ GCS (Bronze Layer). Đảm bảo kiểm tra schema khi đẩy JSON/CSV.
+* `dbt/`: Chứa mã nguồn dbt để chuyển đổi dữ liệu SQL trên BigQuery (Silver & Gold Layer).
+* `data/`: Dữ liệu thô (raw CSV/JSON/Parquet local) và file xuất kết quả.
+* `duckdb/`: Cấu trúc phát triển cũ, hiện tại được dùng làm nguồn chuẩn (source of truth) cho logic trước khi deploy lên GCP.
+
+---
+
+## 4. Lộ Trình Triển Khai (Timeline)
+
+| Giai đoạn | Nội dung | Trạng thái |
+| :--- | :--- | :--- |
+| Giai đoạn 1 | Ingestion & Schema Enforcement (PySpark + GCS) | Hoàn thành |
+| Giai đoạn 2 | Xây dựng Silver Layer (dbt Staging & Intermediate) | Hoàn thành |
+| Giai đoạn 3 | Tối ưu hóa Gold Layer (Customer 360 & Analytics) | Hoàn thành |
+| Giai đoạn 4 | Trực quan hóa dữ liệu (Looker Studio) | Đang thực hiện |
+
+---
+
+## 5. Trạng Thái Hoàn Thành Chi Tiết
+
+### 1. Ingestion (Bronze Layer)
+- Công nghệ: PySpark chạy trên Docker.
+- Kết quả: Chuyển đổi toàn bộ dữ liệu từ định dạng JSON/CSV sang định dạng Parquet để tối ưu dung lượng và tốc độ truy vấn truy xuất.
+- Xử lý sự cố: Đã giải quyết tình trạng cạn kiệt bộ nhớ OutOfMemory (OOM) bằng việc cấp lượng lớn Driver Memory và phân đoạn `upload.chunk.size` cho cấu hình GCS.
+
+### 2. Transformation (Silver & Gold Layer)
+- Công nghệ: dbt (Data Build Tool) kết hợp BigQuery.
+- Staging: Thiết lập thành công các cấu hình External Tables trỏ thẳng vào dataset Parquet lưu trữ ở GCS. 
+- Intermediate: Gom chung logic vào Spine định danh, xử lý toàn bộ UNION tập trung thành chuẩn DISTINCT duy nhất.
+- Marts (Gold): Xây dựng khối `mart_customer_360`, kết cấu tóm tắt vòng đời hành vi người xem theo logic mảng tiên tiến.
+
+---
+
+## 6. Bài Học Kinh Nghiệm (Key Learnings)
+
+1. Spark Memory Management: Khi chạy Spark trong môi trường container, các cấu hình nhúng bằng `.config()` trong file code thường không có tác dụng. Buộc phải thiết lập `--driver-memory` ngay từ lời gọi `spark-submit` ban đầu.
+2. GCS Connector OOM: Đẩy file lớn lên Google Cloud Storage có thể làm sụp đổ Node nếu không chia nhỏ dung lượng upload tại tham số `fs.gs.outputformat.upload.chunk.size`.
+3. dbt External Tables trên BigQuery: Khai báo định dạng file Parquet phải nằm gọn bên trong tag `options` thay vì định dạng DuckDB truyền thống.
+4. Schema Enforcement: Ràng buộc khung kiểu dữ liệu cố định trong PySpark giảm hàng loạt lỗi SQL về sau. Nhưng với dữ liệu đã lưu sẵn bằng dạng Parquet thì nền tảng tự động có schema, việc cưỡng ép thêm sẽ gây lỗi kiểu Array/List phức hợp.
+5. Cú Pháp GoogleSQL vs DuckDB: Tránh dùng nhầm lẫn các hàm xử lý. BQ cần `PARSE_DATE` thay vì `strptime`, xử lý mảng nối dây chuỗi sẽ chuộng `ARRAY_TO_STRING` thay cho `CONCAT_WS` và quan trọng về việc rạch ròi kiểu dữ liệu (`SAFE_CAST`).
+
+---
+
+## 7. Hướng Dẫn Chạy Dự Án (Commands to Run)
+
+### Bước 1: Xác Thực Dịch Vụ GCP
+Đăng nhập tài khoản Local Application thông qua Cloud SDK để xác thực vào GCS và BQ:
+```bash
+gcloud auth application-default login
+```
+
+### Bước 2: Chạy lớp PySpark Ingestion (Đẩy dữ liệu lên GCS)
+Sử dụng công cụ `spark-submit` có cấp cấu hình Connector Cloud bổ sung. Ví dụ ingest bộ dataset `log_search`:
+```bash
+export GCS_BRONZE_BUCKET="gs://bigdata-proj"
+spark-submit \
+  --driver-memory 4g \
+  --packages com.google.cloud.bigdataoss:gcs-connector:hadoop3-2.2.8 \
+  ingestion/jobs/ingest_log_search.py
+```
+
+### Bước 3: Cài Đặt Các Phụ Thuộc dbt
+Kích hoạt môi trường trong thư mục chứa dbt để tải thư viện (như dbt_utils và dbt_external_tables):
+```bash
+cd dbt
+dbt deps
+```
+
+### Bước 4: Tạo External Tables (BigQuery -> GCS)
+Lệnh Operation này sẽ quét toàn bộ định nghĩa trong thư mục staging (`_sources.yml`) để tạo DDL ghim thẳng vào bucket GCS. (Chạy một lần mồi hoặc khi thay đổi path gcs).
+```bash
+dbt run-operation stage_external_sources
+```
+
+### Bước 5: Biên Dịch và Chạy Full Transformation
+Kiểm tra tính tuân thủ của các SQL script trước khi thực sự cấp bảng (table/view) ở BQ:
+```bash
+# Compile syntax (chỉ dịch Jinja / SQL và test error cú pháp)
+dbt compile
+
+# Khởi tạo toàn bộ mô hình (Staging -> Intermediate -> Marts)
+dbt run
+```
+
+---
+
+## 8. Kết Quả Đầu Ra (Output)
+
+### Hình ảnh Ingestion
+Dưới đây là các minh chứng cho việc thực thi Pipeline thành công:
+
+* Spark Ingestion Success: 
+![Spark Ingestion Success](images/ingest/ingest_summary.png)
+* dbt Build Result:
+![dbt Build](images/dbt/running_output.png)
+* GCS Storage Structure: 
+![GCS Structure](images/gcp/gcs/storage_structure.png)
+* marts demo:
+![marts demo](images/gcp/bigquery/marts/demo.png)
+
+
+---
+Cập nhật lần cuối: 16/03/2026

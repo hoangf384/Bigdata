@@ -32,10 +32,9 @@ def ingest():
     print(f"Source: {RAW_SOURCE}")
     print(f"Destination: {DEST_PATH}")
 
-    # 3. Read with Schema Enforcement
+    # 3. Read with native Parquet schema (Parquet encodes schema automatically)
     df = (spark.read
           .option("recursiveFileLookup", "true")
-          .schema(log_search_schema)
           .parquet(RAW_SOURCE))
 
     # 4. Metadata Enrichment

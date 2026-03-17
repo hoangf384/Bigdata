@@ -3,7 +3,7 @@
   "dockerComposeFile": [
     "../infra/spark/docker-compose.yaml"
   ],
-  "service": "spark-worker",
+  "service": "spark-node",
   "workspaceFolder": "/workspace",
   "updateRemoteUserUID": false,
   "remoteUser": "root",

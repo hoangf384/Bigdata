@@ -41,5 +41,8 @@ target/
 .DS_Store
 Thumbs.db
 
-
+# older script
 yapping/
+scripts/
+queries/
+notebooks/
